@@ -1,0 +1,21 @@
+info:
+  name: Inject Event - Calibration Pulse
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: http://localhost:8080/api/admin/sensors/sensor-01/events
+  body:
+    type: json
+    data: |-
+      {
+        "event_type": "calibration_pulse"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

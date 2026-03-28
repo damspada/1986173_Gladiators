@@ -1,0 +1,21 @@
+include:
+  - db/docker-compose.yml
+  - backend/docker-compose.yml
+  - broker/docker-compose.yml
+  - replicas/docker-compose.yml
+
+services:
+  simulator:
+    image: seismic-signal-simulator:multiarch_v1
+    ports:
+      - "9090:8080"
+    environment:
+      SAMPLING_RATE_HZ: 20
+      AUTO_SHUTDOWN_ENABLED: "true"
+      AUTO_SHUTDOWN_MIN_SECONDS: 30
+      AUTO_SHUTDOWN_MAX_SECONDS: 90
+    networks:
+      - gladiators-net
+
+networks:
+  gladiators-net:

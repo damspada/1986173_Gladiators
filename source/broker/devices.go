@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 )
 
 type Coordinates struct {
@@ -20,8 +21,16 @@ type Sensor struct {
 	WebSocketURL string      `json:"websocket_url"`
 }
 
+func getSimulatorURL() string {
+	url := os.Getenv("SIMULATOR_URL")
+	if url == "" {
+		return "http://simulator:8080"
+	}
+	return url
+}
+
 func getSensors() ([]Sensor, error) {
-	risposta, err := http.Get("http://localhost:8080/api/devices/")
+	risposta, err := http.Get(getSimulatorURL() + "/api/devices/")
 	if err != nil {
 		return nil, err
 	}

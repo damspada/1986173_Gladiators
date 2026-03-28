@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 )
 
 func main() {
@@ -13,12 +14,27 @@ func main() {
 	// esponi l'endpoint SSE per le repliche
 	http.HandleFunc("/stream", hub.handleSSE)
 
-	// lancia i sensori in background
-	sensors, err := getSensors()
-	if err != nil {
-		fmt.Println("Errore nel recupero dei sensori:", err)
-		return
+	// avvia il server HTTP in background così le repliche possono connettersi subito
+	go func() {
+		fmt.Println("Broker SSE avviato su :9090")
+		if err := http.ListenAndServe(":9090", nil); err != nil {
+			fmt.Printf("Errore server: %v\n", err)
+		}
+	}()
+
+	// riprova a recuperare i sensori finché il simulatore non è pronto
+	var sensors []Sensor
+	for {
+		var err error
+		sensors, err = getSensors()
+		if err == nil {
+			break
+		}
+		fmt.Printf("In attesa del simulatore: %v. Riprovo tra 5s...\n", err)
+		time.Sleep(5 * time.Second)
 	}
+
+	fmt.Printf("Trovati %d sensori\n", len(sensors))
 
 	var wg sync.WaitGroup
 	for _, sensor := range sensors {
@@ -26,10 +42,6 @@ func main() {
 		go leggiSensore(sensor, hub, &wg)
 	}
 
-	// avvia il server HTTP sulla porta 9090
-	fmt.Println("Broker avviato su http://localhost:9090")
-	err = http.ListenAndServe(":9090", nil)
-	if err != nil {
-		fmt.Println("Errore server:", err)
-	}
+	// blocca per sempre — il server SSE continua a girare
+	select {}
 }
