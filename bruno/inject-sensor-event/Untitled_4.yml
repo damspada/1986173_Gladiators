@@ -1,0 +1,21 @@
+info:
+  name: Inject Event - Conventional Explosion
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://localhost:8080/api/admin/sensors/sensor-01/events
+  body:
+    type: json
+    data: |-
+      {
+        "event_type": "conventional_explosion"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

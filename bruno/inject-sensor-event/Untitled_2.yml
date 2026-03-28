@@ -1,18 +1,18 @@
 info:
-  name: Inject Sensor Event
+  name: Inject Event - Earthquake
   type: http
-  seq: 6
+  seq: 1
 
 http:
   method: POST
   url: http://localhost:8080/api/admin/sensors/sensor-01/events
-  auth: inherit
   body:
     type: json
-    json: |
+    data: |-
       {
         "event_type": "earthquake"
       }
+  auth: inherit
 
 settings:
   encodeUrl: true
