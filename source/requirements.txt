@@ -1,0 +1,14 @@
+# Web framework for the Processing Service API
+fastapi
+
+# ASGI server to run the FastAPI application
+uvicorn
+
+# HTTP client for SSE control stream and forwarding alerts to the Gateway
+httpx
+
+# Core library for FFT mathematical analysis and signal processing
+numpy
+
+# Required for the Broker to connect to simulator WebSockets
+websockets
