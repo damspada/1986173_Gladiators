@@ -1,0 +1,10 @@
+services:
+  broker:
+    build: .
+    environment:
+      SIMULATOR_URL: http://simulator:8080
+    networks:
+      - gladiators-net
+
+networks:
+  gladiators-net:

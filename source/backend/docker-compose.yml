@@ -1,0 +1,17 @@
+services:
+
+  backend:
+    build: .
+    ports:
+      - "8081:8090"
+    environment:
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
+      SIMULATOR_BASE_URL: http://simulator:8080
+    networks:
+      - gladiators-net
+
+networks:
+  gladiators-net:
+

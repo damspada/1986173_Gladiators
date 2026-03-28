@@ -1,0 +1,13 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Environments
+.venv/
+env/
+venv/
+
+# Local tests or temporary scripts
+tests/
+test_api.py
+mock_gateway.py

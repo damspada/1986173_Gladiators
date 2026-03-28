@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -16,24 +15,20 @@ type Measurement struct {
 }
 
 // struttura del messaggio che mandiamo alle repliche
-// aggiungiamo il sensor_id e i metadati del sensore
+// aggiungiamo il sensor_id per sapere da quale sensore viene
 type Message struct {
 	SensorID  string  `json:"sensor_id"`
 	Timestamp string  `json:"timestamp"`
 	Value     float64 `json:"value"`
-	Lat       float64 `json:"lat"`
-	Lon       float64 `json:"lon"`
-	Region    string  `json:"region"`
 }
 
 func leggiSensore(sensor Sensor, hub *Hub, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	simulatorURL := getSimulatorURL()
-	wsURL := strings.Replace(simulatorURL, "http://", "ws://", 1) + sensor.WebSocketURL
-	fmt.Printf("Connessione a %s (%s)...\n", sensor.Name, wsURL)
+	url := "ws://localhost:8080" + sensor.WebSocketURL
+	fmt.Printf("Connessione a %s...\n", sensor.Name)
 
-	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		fmt.Printf("Errore connessione %s: %v\n", sensor.Name, err)
 		return
@@ -54,17 +49,14 @@ func leggiSensore(sensor Sensor, hub *Hub, wg *sync.WaitGroup) {
 		err = json.Unmarshal(raw, &measurement)
 		if err != nil {
 			fmt.Printf("Errore parsing %s: %v\n", sensor.ID, err)
-			continue
+			continue // skippa questo messaggio e vai al prossimo
 		}
 
-		// costruisci il messaggio da mandare alle repliche (con metadati sensore)
+		// costruisci il messaggio da mandare alle repliche
 		msg := Message{
 			SensorID:  sensor.ID,
 			Timestamp: measurement.Timestamp,
 			Value:     measurement.Value,
-			Lat:       sensor.Coordinates.Latitude,
-			Lon:       sensor.Coordinates.Longitude,
-			Region:    sensor.Region,
 		}
 
 		// converti in JSON e manda a tutte le repliche

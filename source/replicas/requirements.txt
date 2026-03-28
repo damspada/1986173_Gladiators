@@ -4,7 +4,7 @@ fastapi
 # ASGI server to run the FastAPI application
 uvicorn
 
-# HTTP client for SSE control stream and forwarding alerts to the Gateway
+# HTTP client for SSE control stream
 httpx
 
 # Core library for FFT mathematical analysis and signal processing
@@ -12,3 +12,6 @@ numpy
 
 # Required for the Broker to connect to simulator WebSockets
 websockets
+
+# Neo4j async driver for direct database writes
+neo4j
