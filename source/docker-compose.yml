@@ -1,3 +1,5 @@
+name: gladiators
+
 include:
   - db/docker-compose.yml
   - backend/docker-compose.yml

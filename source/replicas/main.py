@@ -2,12 +2,22 @@ import os
 import sys
 import json
 import asyncio
+import logging
 import httpx
 import socket
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from analyzer import SeismicAnalyzer
 from neo4j_repository import create_repository
+
+LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "INFO").upper()
+
+logging.basicConfig(
+    level=LOGGING_LEVEL,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    stream=sys.stdout,
+)
+logger = logging.getLogger(__name__)
 
 REPLICA_ID = socket.gethostname()
 
@@ -23,17 +33,17 @@ async def listen_to_broker(app):
     """
     Consumes the SSE (Server-Sent Events) stream from the Internal Broker.
     """
-    print(f"[*] Broker URL  : {BROKER_URL}")
-    print(f"[*] Simulator   : {SIMULATOR_URL}")
+    logger.info("Broker URL  : %s", BROKER_URL)
+    logger.info("Simulator   : %s", SIMULATOR_URL)
 
     messages_received = 0
     events_detected = 0
 
-    print(f"[*] Connecting to Internal Broker SSE stream: {BROKER_URL}")
+    logger.info("Connecting to Internal Broker SSE stream: %s", BROKER_URL)
     while True:
         try:
             async with http_client.stream("GET", BROKER_URL, timeout=None) as response:
-                print(f"[*] Successfully connected to Broker! (HTTP {response.status_code}) Waiting for seismic data...")
+                logger.info("Successfully connected to Broker! (HTTP %s) Waiting for seismic data...", response.status_code)
                 async for line in response.aiter_lines():
                     if line.startswith("data:"):
                         raw_json = line[5:].strip()
@@ -41,7 +51,7 @@ async def listen_to_broker(app):
                             msg = json.loads(raw_json)
                             messages_received += 1
                             if messages_received % 200 == 0:
-                                print(f"[~] {messages_received} measurements received so far ({events_detected} events detected)")
+                                logger.debug("%d measurements received so far (%d events detected)", messages_received, events_detected)
 
                             event = app.state.analyzer.process_measurement(
                                 msg['sensor_id'],
@@ -53,13 +63,13 @@ async def listen_to_broker(app):
                                 await handle_detection(app, event, msg['timestamp'], msg)
 
                         except (json.JSONDecodeError, KeyError) as e:
-                            print(f"[!] Malformed message from broker: {e} — raw: {line[:120]}")
+                            logger.warning("Malformed message from broker: %s — raw: %s", e, line[:120])
                             continue
                         except Exception as e:
-                            print(f"[!] Error processing event: {e}")
+                            logger.warning("Error processing event: %s", e)
                             continue
         except Exception as e:
-            print(f"[!] Connection lost to broker: {e}. Retrying in 5s...")
+            logger.warning("Connection lost to broker: %s. Retrying in 5s...", e)
             await asyncio.sleep(5)
 
 async def handle_detection(app, event, timestamp, metadata):
@@ -87,29 +97,27 @@ async def handle_detection(app, event, timestamp, metadata):
             "region": metadata.get("region", "UNKNOWN"),
         })
     except Exception as e:
-        print(f"[!] Failed to notify backend: {e}")
+        logger.warning("Failed to notify backend: %s", e)
 
 async def listen_to_control_stream():
     """
     Listens to the official Simulator control stream for SHUTDOWN commands.
     """
     control_url = f"{SIMULATOR_URL}/api/control"
-    print(f"[*] Listening to simulator control stream: {control_url}")
+    logger.info("Listening to simulator control stream: %s", control_url)
     while True:
         try:
             async with http_client.stream("GET", control_url, timeout=None) as response:
-                print(f"[*] Connected to simulator control stream (HTTP {response.status_code})")
+                logger.info("Connected to simulator control stream (HTTP %s)", response.status_code)
                 async for line in response.aiter_lines():
                     if line.startswith("data:"):
                         data_str = line[5:].strip()
                         payload = json.loads(data_str)
                         if payload.get("command") == "SHUTDOWN":
-                            msg = f"\n{'='*80}\n[CRASH] Replica {REPLICA_ID} received SHUTDOWN command - Terminating.\n{'='*80}\n"
-                            print(msg, file=sys.stderr, flush=True)
-                            print(f"[!!!] SHUTDOWN command received by replica {REPLICA_ID}. Terminating now.", flush=True)
+                            logger.critical("SHUTDOWN command received by replica %s — Terminating.", REPLICA_ID)
                             os._exit(1)
         except Exception as e:
-            print(f"[!] Control stream error: {e}. Retrying in 5s...")
+            logger.warning("Control stream error: %s. Retrying in 5s...", e)
             await asyncio.sleep(5)
 
 @asynccontextmanager
@@ -118,12 +126,12 @@ async def lifespan(app: FastAPI):
     Manages the lifecycle of the FastAPI application.
     Starts background tasks upon startup and cleans up upon shutdown.
     """
-    print(f"[*] Initializing replica {REPLICA_ID}...")
+    logger.info("Initializing replica %s...", REPLICA_ID)
     app.state.repo = await create_repository(REPLICA_ID)
 
     # Initialize the analyzer (Default sampling rate is 20Hz as per DOCKER_CONTRACT.md)
     app.state.analyzer = SeismicAnalyzer(sampling_rate=20.0)
-    print(f"[*] SeismicAnalyzer ready (window=200 samples @ 20Hz)")
+    logger.info("SeismicAnalyzer ready (window=200 samples @ 20Hz)")
 
     # Start background ingestion and control tasks
     broker_task = asyncio.create_task(listen_to_broker(app))
