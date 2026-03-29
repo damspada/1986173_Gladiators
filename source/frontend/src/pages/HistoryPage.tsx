@@ -108,9 +108,6 @@ export const HistoryPage = ({ onSelectEvent }: HistoryPageProps) => {
     [events],
   )
 
-  const handleFiltersChange = (next: HistoryFilterRule[]) => setRules(next)
-  const regionIncidents = useMemo(() => groupEventsByIncident(filteredEvents, 10 * 60 * 1000), [filteredEvents])
-
   const exportCsv = () => {
     const csv = toEventsCsv(filteredEvents)
     triggerDownload(csv, `history-${new Date().toISOString()}.csv`, 'text/csv;charset=utf-8')
