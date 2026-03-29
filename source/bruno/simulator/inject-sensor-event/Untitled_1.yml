@@ -1,0 +1,21 @@
+info:
+  name: Inject Event - Nuclear Like
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: http://localhost:{{simulator_port}}/api/admin/sensors/sensor-02/events
+  body:
+    type: json
+    data: |-
+      {
+        "event_type": "nuclear_like"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

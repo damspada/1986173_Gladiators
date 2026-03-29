@@ -1,0 +1,12 @@
+info:
+  name: Sensor WebSocket Stream
+  type: websocket
+  seq: 1
+
+websocket:
+  url: ws://localhost:{{simulator_port}}/api/device/sensor-01/ws
+  auth: inherit
+
+settings:
+  timeout: 0
+  keepAliveInterval: 0

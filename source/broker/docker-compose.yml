@@ -1,0 +1,12 @@
+services:
+  broker:
+    build: .
+    ports:
+      - "9091:9090"
+    environment:
+      SIMULATOR_URL: http://simulator:8080
+    networks:
+      - gladiators-net
+
+networks:
+  gladiators-net:

@@ -1,0 +1,119 @@
+/*
+ * Neo4j Browser style sheet — aFragileBalanceOfPower
+ *
+ * AUTO-LOADED: Neo4j Browser fetches this file automatically via
+ * browser.post_connect_cmd on every connection (configured in db/docker-compose.yml).
+ * The file is served by the Spring Boot backend at http://localhost:8081/browser.grass.
+ *
+ * MANUAL FALLBACK (if auto-load fails):
+ *   1. Open Neo4j Browser at http://localhost:7474
+ *   2. Run:  :style http://localhost:8081/browser.grass
+ *
+ * EVENT SIZING (correlates to dominant frequency):
+ *   EARTHQUAKE             0.5 – 3 Hz  → small  (45px) — orange
+ *   CONVENTIONAL_EXPLOSION 3   – 8 Hz  → medium (65px) — crimson
+ *   NUCLEAR_EVENT          ≥ 8 Hz      → large  (85px) — dark red
+ */
+
+/* ── defaults ─────────────────────────────────────────────────────── */
+node {
+  diameter: 50px;
+  color: #A5ABB6;
+  border-color: #9AA1AC;
+  border-width: 2px;
+  text-color-internal: #FFFFFF;
+  font-size: 10px;
+}
+relationship {
+  color: #A5ABB6;
+  shaft-width: 1px;
+  font-size: 8px;
+  padding: 3px;
+  text-color-external: #000000;
+  text-color-internal: #FFFFFF;
+}
+
+/* ── infrastructure nodes ─────────────────────────────────────────── */
+node.Sensor {
+  color: #4C8EDA;
+  border-color: #2870C2;
+  diameter: 40px;
+  caption: "{sensorId}";
+  text-color-internal: #FFFFFF;
+}
+node.Region {
+  color: #57C7E3;
+  border-color: #23B3D7;
+  diameter: 50px;
+  caption: "{name}";
+  text-color-internal: #FFFFFF;
+}
+node.Replica {
+  color: #6DCE9E;
+  border-color: #12B76F;
+  diameter: 35px;
+  caption: "{replicaId}";
+  text-color-internal: #FFFFFF;
+}
+
+/* ── seismic events — colour + size by classification / frequency ─── */
+node.SeismicEvent {
+  color: #A5ABB6;
+  border-color: #9AA1AC;
+  diameter: 50px;
+  caption: "{classification}";
+  text-color-internal: #FFFFFF;
+}
+node.EARTHQUAKE {
+  color: #FF8C00;
+  border-color: #CC7000;
+  diameter: 45px;
+  caption: "{classification}";
+  text-color-internal: #FFFFFF;
+}
+node.CONVENTIONAL_EXPLOSION {
+  color: #DC143C;
+  border-color: #AA1030;
+  diameter: 65px;
+  caption: "{classification}";
+  text-color-internal: #FFFFFF;
+}
+node.NUCLEAR_EVENT {
+  color: #8B0000;
+  border-color: #550000;
+  diameter: 85px;
+  caption: "{classification}";
+  text-color-internal: #FFFFFF;
+}
+
+/* ── relationships ────────────────────────────────────────────────── */
+relationship.REPORTED {
+  color: #6DCE9E;
+  shaft-width: 2px;
+  caption: "REPORTED";
+  text-color-external: #000000;
+}
+relationship.DETECTED {
+  color: #4C8EDA;
+  shaft-width: 2px;
+  caption: "DETECTED";
+  text-color-external: #000000;
+}
+relationship.OCCURRED_IN {
+  color: #57C7E3;
+  shaft-width: 2px;
+  caption: "OCCURRED_IN";
+  text-color-external: #000000;
+}
+relationship.LOCATED_IN {
+  color: #57C7E3;
+  shaft-width: 1px;
+  caption: "LOCATED_IN";
+  text-color-external: #000000;
+}
+relationship.CONFIRMED {
+  color: #FFD700;
+  shaft-width: 4px;
+  caption: "CONFIRMED";
+  text-color-external: #000000;
+}

@@ -1,0 +1,44 @@
+<<<<<<< HEAD:source/frontend-dashboard/docker-compose.yml
+include:
+  - db/docker-compose.yml
+  - backend/docker-compose.yml
+  - broker/docker-compose.yml
+  - replicas/docker-compose.yml
+  - frontend/docker-compose.yml
+
+services:
+  simulator:
+    image: seismic-signal-simulator:multiarch_v1
+    ports:
+      - "9090:8080"
+    environment:
+      SAMPLING_RATE_HZ: 100
+      AUTO_SHUTDOWN_ENABLED: "true"
+      AUTO_SHUTDOWN_MIN_SECONDS: 30
+      AUTO_SHUTDOWN_MAX_SECONDS: 90
+=======
+services:
+
+  frontend:
+    build:
+      context: .
+      args:
+        VITE_LIVE_WS_URL: ws://localhost/api/events/ws
+        VITE_HISTORY_API_URL: http://localhost/api/history/events
+    ports:
+      - "80:80"
+    environment:
+      BACKEND_UPSTREAM: backend:8090
+    depends_on:
+      backend:
+        condition: service_healthy
+>>>>>>> dev:source/frontend/docker-compose.yml
+    networks:
+      - gladiators-net
+
+networks:
+<<<<<<< HEAD:source/frontend-dashboard/docker-compose.yml
+  gladiators-net:
+=======
+  gladiators-net:
+>>>>>>> dev:source/frontend/docker-compose.yml
