@@ -2,8 +2,12 @@ services:
   replica:
     build: .
     deploy:
+      mode: replicated
       replicas: 3
-    restart: "no"
+      update_config:
+        parallelism: 1
+        failure_action: rollback
+    restart: "always"
     environment:
       BROKER_URL: http://broker:9090/stream
       SIMULATOR_URL: http://simulator:8080

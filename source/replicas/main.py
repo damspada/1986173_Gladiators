@@ -76,6 +76,8 @@ async def handle_detection(event, timestamp, metadata):
     print(f"[ALERT] {event['event_type']} detected by {event['sensor_id']}! "
           f"Frequency: {event['dominant_frequency']} Hz — saving to Neo4j...")
 
+    print(f"Event details: {event}")
+
     try:
         async with neo4j_driver.session() as session:
             await session.run(
