@@ -8,6 +8,8 @@ export interface IncidentCluster {
   to: string
   count: number
   events: SeismicEvent[]
+  peakFrequency?: number
+  confirmedCount?: number
 }
 
 const severityRank: Record<EventClassification, number> = {

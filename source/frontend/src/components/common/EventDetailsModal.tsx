@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { divIcon, type LatLngTuple } from 'leaflet'
 import { SensorNavLink } from './SensorNavLink'
 import { ZoneNavLink } from './ZoneNavLink'
@@ -7,6 +7,7 @@ import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import { classificationBadgeClass, classificationLabel } from '../../utils/classification'
 import { formatFrequency, formatUtcTimestamp } from '../../utils/format'
 import type { SeismicEvent } from '../../types/seismic'
+import { fetchEventCorroboration, type EventCorroboration } from '../../services/historyApi'
 
 interface EventDetailsModalProps {
   event: SeismicEvent | null
@@ -21,6 +22,21 @@ const miniMapIcon = divIcon({
 })
 
 export const EventDetailsModal = ({ event, onClose }: EventDetailsModalProps) => {
+  const [corroboration, setCorroboration] = useState<EventCorroboration | null>(null)
+  const [corroborationLoading, setCorroborationLoading] = useState(false)
+
+  useEffect(() => {
+    if (!event) {
+      setCorroboration(null)
+      return
+    }
+    setCorroborationLoading(true)
+    fetchEventCorroboration(event.event_id)
+      .then(setCorroboration)
+      .catch(() => setCorroboration(null))
+      .finally(() => setCorroborationLoading(false))
+  }, [event?.event_id])
+
   const location = useMemo(() => {
     if (!event?.sensor) {
       return null
@@ -74,8 +90,23 @@ export const EventDetailsModal = ({ event, onClose }: EventDetailsModalProps) =>
               <span className="text-zinc-100">{formatFrequency(event.frequency)}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span>Amplitude</span>
-              <span className="text-zinc-100">{event.amplitude?.toFixed(2) ?? 'N/A'}</span>
+              <span>Confirmed</span>
+              <span className={clsx(
+                'inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-[10px] uppercase tracking-[0.1em]',
+                corroborationLoading
+                  ? 'text-zinc-500'
+                  : corroboration?.confirmed
+                    ? 'border border-emerald-500/40 bg-emerald-900/30 text-emerald-300'
+                    : 'border border-zinc-600/40 bg-zinc-800/30 text-zinc-400',
+              )}>
+                {corroborationLoading ? '—' : corroboration?.confirmed ? 'Yes' : 'No'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span>Replicas reported</span>
+              <span className="text-zinc-100">
+                {corroborationLoading ? '—' : (corroboration?.reporter_count ?? 0)}
+              </span>
             </div>
             <div className="flex items-center justify-between gap-2">
               <span>Event ID</span>
@@ -117,6 +148,35 @@ export const EventDetailsModal = ({ event, onClose }: EventDetailsModalProps) =>
               </div>
             )}
           </div>
+        </div>
+
+        {/* Replica Corroboration Report */}
+        <div className="mt-3 rounded-sm border border-zinc-700/80 bg-zinc-900/45 p-3">
+          <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">Replica Corroboration</p>
+          {corroborationLoading ? (
+            <p className="text-[11px] uppercase tracking-[0.12em] text-zinc-500">Loading...</p>
+          ) : corroboration && corroboration.replica_ids.length > 0 ? (
+            <div className="space-y-1">
+              {corroboration.replica_ids.map((replicaId, i) => (
+                <div
+                  key={replicaId}
+                  className="flex items-center justify-between gap-2 text-[11px] uppercase tracking-[0.1em]"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                    <span className="text-zinc-300">{replicaId}</span>
+                  </div>
+                  <span className="text-zinc-500">
+                    {corroboration.detected_ats[i]
+                      ? formatUtcTimestamp(corroboration.detected_ats[i])
+                      : '—'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] uppercase tracking-[0.12em] text-zinc-500">No replica data available</p>
+          )}
         </div>
       </div>
     </div>
