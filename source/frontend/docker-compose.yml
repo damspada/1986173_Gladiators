@@ -1,0 +1,15 @@
+services:
+
+  frontend:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      BACKEND_UPSTREAM: backend:8090
+    depends_on:
+      - backend
+    networks:
+      - gladiators-net
+
+networks:
+  gladiators-net:
