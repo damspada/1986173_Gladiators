@@ -1,6 +1,7 @@
 import { divIcon, latLngBounds, type LatLngTuple } from 'leaflet'
 import { useEffect, useRef, useState } from 'react'
 import { Circle, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet'
+import { ZoneNavLink } from '../common/ZoneNavLink'
 import type { SeismicEvent, SensorMeta } from '../../types/seismic'
 
 interface SensorGridMapProps {
@@ -142,13 +143,13 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectSensor }: SensorG
     )
 
   return (
-    <section className="tactical-panel relative min-h-[20rem] overflow-hidden p-4">
+    <section className="tactical-panel relative min-h-[16rem] overflow-hidden p-3 sm:min-h-[20rem] sm:p-4">
       <div className="relative z-10 flex items-center justify-between pb-3 text-xs uppercase tracking-[0.22em] text-zinc-400">
         <span>Global Sensor Map</span>
         <span>{sensors.length} units online</span>
       </div>
 
-      <div className="relative z-10 h-[16.5rem] rounded-sm border border-zinc-700/80 bg-zinc-950/70">
+      <div className="relative z-10 h-[13rem] rounded-sm border border-zinc-700/80 bg-zinc-950/70 sm:h-[16.5rem]">
         <div className="map-radar-overlay" aria-hidden="true">
           <span className="map-radar-sweep" />
           <span className="map-radar-ring map-radar-ring--one" />
@@ -215,7 +216,9 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectSensor }: SensorG
                   <Tooltip direction="top" offset={[0, -10]} opacity={0.95} className="sensor-map-tooltip">
                     <div className="text-[10px] uppercase tracking-[0.14em]">
                       <div>{sensor.sensor_id}</div>
-                      <div className="mt-1 text-zinc-300">{sensor.region}</div>
+                      <div className="mt-1 text-zinc-300">
+                        <ZoneNavLink zone={sensor.region} className="px-0 py-0 text-zinc-300 hover:text-cyan-200" />
+                      </div>
                       <div className="mt-1 text-zinc-400">
                         {sensor.lat.toFixed(2)}, {sensor.long.toFixed(2)}
                       </div>

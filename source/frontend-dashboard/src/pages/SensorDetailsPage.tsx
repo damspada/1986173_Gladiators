@@ -3,7 +3,14 @@ import { divIcon, type LatLngTuple } from 'leaflet'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
-import { classificationBadgeClass, classificationLabel } from '../utils/classification'
+import { ZoneNavLink } from '../components/common/ZoneNavLink'
+import {
+  CLASSIFICATION_BANDS,
+  classificationBadgeClass,
+  classificationBandPalette,
+  classificationLabel,
+  isSevereAnomaly,
+} from '../utils/classification'
 import { formatFrequency, formatUtcTimestamp } from '../utils/format'
 import { fetchHistoryEvents } from '../services/historyApi'
 import type { SeismicEvent, SensorMeta } from '../types/seismic'
@@ -86,13 +93,13 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
           type: 'ALL',
           sensorId,
           region: '',
-        })
+        }, { limit: 300, offset: 0 })
 
         if (!active) {
           return
         }
 
-        setHistoryEvents(result.filter((event) => event.sensor_id === sensorId))
+        setHistoryEvents(result.events.filter((event) => event.sensor_id === sensorId))
       } catch (err: unknown) {
         if (!active) {
           return
@@ -274,13 +281,15 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
     return {
       width,
       height,
-        paddingX,
-        paddingY,
+      paddingX,
+      paddingY,
+      minY,
+      maxY,
       pathD,
-        movingAveragePathD,
+      movingAveragePathD,
       toX,
       toY,
-        renderPoints,
+      renderPoints,
       yGrid,
     }
   }, [showMovingAverage, visiblePoints])
@@ -414,7 +423,11 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
             <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-400">Sensor Dossier</p>
             <h2 className="mt-1 text-xl uppercase tracking-[0.18em] text-zinc-100">{sensorId}</h2>
             <p className="mt-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
-              {sensorMeta?.region ?? 'Region unavailable'}
+              {sensorMeta?.region ? (
+                <ZoneNavLink zone={sensorMeta.region} className="px-0 py-0 text-zinc-400 hover:text-cyan-200" />
+              ) : (
+                'Region unavailable'
+              )}
             </p>
           </div>
           <Link
@@ -426,14 +439,15 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
+      <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
         <div className="tactical-panel p-4">
           <div className="mb-3 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-zinc-400">
             <span>Frequency Over Time</span>
             <span>{allEvents.length} events</span>
           </div>
 
-          <div className="mb-3 grid gap-2 rounded-sm border border-zinc-700/80 bg-zinc-900/50 p-2 text-[10px] uppercase tracking-[0.14em] text-zinc-300 md:grid-cols-[auto_auto_auto_auto_1fr_auto]">
+          <div className="mb-3 overflow-x-auto rounded-sm border border-zinc-700/80 bg-zinc-900/50 p-2 text-[10px] uppercase tracking-[0.14em] text-zinc-300">
+            <div className="grid min-w-[38rem] gap-2 md:grid-cols-[auto_auto_auto_auto_1fr_auto]">
             <button type="button" className="rounded-sm border border-zinc-600 px-2 py-1 hover:border-cyan-400/70 hover:text-cyan-200" onClick={() => panWindow(-0.1)}>
               Pan -
             </button>
@@ -469,6 +483,7 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
                 MA(5)
               </button>
             </div>
+            </div>
           </div>
 
           {visibleWindowMs ? (
@@ -482,7 +497,7 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
               <svg
                 ref={chartSvgRef}
                 viewBox={`0 0 ${chartModel.width} ${chartModel.height}`}
-                className="h-[16rem] w-full"
+                className="h-[14rem] w-full sm:h-[16rem]"
                 onMouseMove={handleChartMouseMove}
                 onMouseLeave={handleChartLeave}
               >
@@ -494,6 +509,31 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
                     </text>
                   </g>
                 ))}
+
+                {[
+                  { key: 'EARTHQUAKE', from: CLASSIFICATION_BANDS.EARTHQUAKE.min, to: CLASSIFICATION_BANDS.EARTHQUAKE.max },
+                  { key: 'CONVENTIONAL_EXPLOSION', from: CLASSIFICATION_BANDS.CONVENTIONAL_EXPLOSION.min, to: CLASSIFICATION_BANDS.CONVENTIONAL_EXPLOSION.max },
+                  { key: 'NUCLEAR_LIKE', from: CLASSIFICATION_BANDS.NUCLEAR_LIKE.min, to: Math.max(chartModel.maxY, CLASSIFICATION_BANDS.NUCLEAR_LIKE.min + 0.5) },
+                ].map((band) => {
+                  const visibleFrom = Math.max(chartModel.minY, band.from)
+                  const visibleTo = Math.min(chartModel.maxY, band.to)
+                  if (visibleTo <= visibleFrom) {
+                    return null
+                  }
+
+                  const yTop = chartModel.toY(visibleTo)
+                  const yBottom = chartModel.toY(visibleFrom)
+                  return (
+                    <rect
+                      key={`band-${band.key}`}
+                      x={chartModel.paddingX}
+                      y={Math.min(yTop, yBottom)}
+                      width={chartModel.width - chartModel.paddingX * 2}
+                      height={Math.abs(yBottom - yTop)}
+                      fill={classificationBandPalette[band.key as keyof typeof classificationBandPalette]}
+                    />
+                  )
+                })}
 
                 <path d={chartModel.pathD} fill="none" stroke="rgba(34,211,238,0.95)" strokeWidth="2.5" />
 
@@ -517,7 +557,13 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
                       cx={entry.x}
                       cy={entry.y}
                       r={isHovered ? 5.2 : (isLatest ? 4.5 : 2.6)}
-                      fill={isHovered ? 'rgba(250,204,21,0.98)' : (isLatest ? 'rgba(16,185,129,0.98)' : 'rgba(125,211,252,0.94)')}
+                      fill={
+                        isHovered
+                          ? 'rgba(250,204,21,0.98)'
+                          : isSevereAnomaly(entry.point.event.frequency, entry.point.event.severity)
+                            ? 'rgba(225,29,72,0.95)'
+                            : (isLatest ? 'rgba(16,185,129,0.98)' : 'rgba(125,211,252,0.94)')
+                      }
                       className="cursor-pointer"
                       onMouseEnter={() => setHoveredEventId(entry.point.event.event_id)}
                       onClick={() => onSelectEvent(entry.point.event)}
@@ -525,6 +571,10 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
                   )
                 })}
               </svg>
+
+              <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                Bands: cyan earthquake, amber conventional, rose nuclear-like. Red markers highlight severe anomalies.
+              </p>
 
               <div className="mt-2 grid gap-2 rounded-sm border border-zinc-700/70 bg-zinc-900/50 p-2 text-[10px] uppercase tracking-[0.14em] text-zinc-300 md:grid-cols-4">
                 <div>
@@ -567,7 +617,7 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
         <div className="space-y-4">
           <section className="tactical-panel p-4">
             <div className="mb-2 text-xs uppercase tracking-[0.2em] text-zinc-400">Sensor Position</div>
-            <div className="h-[16rem] overflow-hidden rounded-sm border border-zinc-700/80">
+            <div className="h-[13rem] overflow-hidden rounded-sm border border-zinc-700/80 sm:h-[16rem]">
               <MapContainer
                 center={mapCenter}
                 zoom={sensorMeta ? 5 : 2}
@@ -615,13 +665,14 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
 
       <section className="tactical-panel p-4">
         <div className="mb-3 text-xs uppercase tracking-[0.22em] text-zinc-400">Sensor Event Log</div>
-        <div className="overflow-hidden rounded-sm border border-zinc-700/90">
-          <div className="grid grid-cols-[1.6fr_0.8fr_1.2fr] bg-zinc-900 px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-            <span>Timestamp (UTC)</span>
-            <span>Frequency</span>
-            <span>Classification</span>
-          </div>
-          <div className="max-h-[18rem] overflow-y-auto bg-zinc-950/70">
+        <div className="overflow-x-auto rounded-sm border border-zinc-700/90">
+          <div className="min-w-[34rem]">
+            <div className="grid grid-cols-[1.6fr_0.8fr_1.2fr] bg-zinc-900 px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+              <span>Timestamp (UTC)</span>
+              <span>Frequency</span>
+              <span>Classification</span>
+            </div>
+            <div className="max-h-[18rem] overflow-y-auto bg-zinc-950/70">
             {loading ? (
               <p className="px-3 py-8 text-center text-xs uppercase tracking-[0.14em] text-zinc-500">Loading sensor events...</p>
             ) : allEvents.length === 0 ? (
@@ -647,6 +698,7 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
                 </button>
               ))
             )}
+            </div>
           </div>
         </div>
       </section>

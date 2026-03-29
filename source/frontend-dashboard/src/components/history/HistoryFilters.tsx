@@ -72,7 +72,7 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
         <span>Event Type</span>
         <div className="flex gap-1">
           <select
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
+            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
             value={eventTypeInput}
             onChange={(event) => setEventTypeInput(event.target.value as EventClassification)}
           >
@@ -103,10 +103,16 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
         <span>Sensor ID</span>
         <div className="flex gap-1">
           <input
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
+            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
             list="sensor-options"
             value={sensorInput}
             onChange={(event) => setSensorInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                addRule('sensor', 'include', sensorInput)
+              }
+            }}
             placeholder="S-01"
           />
           <button
@@ -135,10 +141,16 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
         <span>Region</span>
         <div className="flex gap-1">
           <input
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
+            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
             list="region-options"
             value={regionInput}
             onChange={(event) => setRegionInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                addRule('region', 'include', regionInput)
+              }
+            }}
             placeholder="NORTH CORRIDOR"
           />
           <button
@@ -193,6 +205,10 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
           </div>
         )}
       </section>
+
+      <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+        Keyboard: Enter adds include rule for sensor/region fields.
+      </p>
     </aside>
   )
 }

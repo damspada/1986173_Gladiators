@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import { useMemo } from 'react'
 import { divIcon, type LatLngTuple } from 'leaflet'
 import { SensorNavLink } from './SensorNavLink'
+import { ZoneNavLink } from './ZoneNavLink'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import { classificationBadgeClass, classificationLabel } from '../../utils/classification'
 import { formatFrequency, formatUtcTimestamp } from '../../utils/format'
@@ -82,7 +83,13 @@ export const EventDetailsModal = ({ event, onClose }: EventDetailsModalProps) =>
             </div>
             <div className="flex items-center justify-between gap-2">
               <span>Region</span>
-              <span className="text-zinc-100">{event.sensor?.region ?? 'UNSPECIFIED'}</span>
+              <span className="text-zinc-100">
+                {event.sensor?.region ? (
+                  <ZoneNavLink zone={event.sensor.region} className="px-0 py-0 text-zinc-100 hover:text-cyan-200" />
+                ) : (
+                  'UNSPECIFIED'
+                )}
+              </span>
             </div>
           </div>
 

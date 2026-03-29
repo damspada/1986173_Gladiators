@@ -73,6 +73,10 @@ let autoStreamEnabled = true
 let autoStreamIntervalMs = 1000
 let autoStreamTimer = null
 const activePresetTimers = new Set()
+let activeReplica = 'replica-a'
+let lastFailoverAt = null
+
+const REPLICA_IDS = ['replica-a', 'replica-b', 'replica-c']
 
 const classifyByFrequency = (frequency) => {
   if (frequency >= 0.5 && frequency < 3.0) {
@@ -107,6 +111,13 @@ const createEventFromPayload = (body = {}) => {
     ? Number(incomingAmplitude.toFixed(2))
     : Number((Math.random() * 12).toFixed(2))
 
+  let severity = 'normal'
+  if (frequency >= 8.8 || amplitude >= 9) {
+    severity = 'critical'
+  } else if (frequency >= 6.0 || amplitude >= 6.5) {
+    severity = 'warning'
+  }
+
   return {
     event_id: randomUUID(),
     sensor_id: sensor.sensor_id,
@@ -118,7 +129,8 @@ const createEventFromPayload = (body = {}) => {
     lat: sensor.lat,
     long: sensor.long,
     region: sensor.region,
-    classification: classifyByFrequency(frequency)
+    classification: classifyByFrequency(frequency),
+    severity
   }
 }
 
@@ -148,6 +160,7 @@ const toFrontendEvent = (event) => ({
   frequency: event.frequency,
   classification: event.classification,
   amplitude: event.amplitude,
+  severity: event.severity,
   lat: event.lat,
   long: event.long,
   region: event.region
@@ -159,6 +172,7 @@ const toHistoryEvent = (event) => ({
   timestamp: event.timestamp,
   frequency: event.frequency,
   classification: event.classification,
+  severity: event.severity,
   amplitude: event.amplitude,
   sensor: {
     sensor_id: event.sensor_id,
@@ -207,26 +221,70 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'mock-seismic-backend', port: PORT })
 })
 
+app.get('/api/infrastructure/status', (_req, res) => {
+  const replicas = REPLICA_IDS.map((id) => {
+    const healthy = Math.random() > 0.16
+    return {
+      id,
+      status: healthy ? 'healthy' : 'down',
+      lagMs: healthy ? Math.floor(40 + Math.random() * 220) : Math.floor(700 + Math.random() * 1300)
+    }
+  })
+
+  const healthyReplicas = replicas.filter((replica) => replica.status === 'healthy')
+  if (!healthyReplicas.some((replica) => replica.id === activeReplica)) {
+    const nextReplica = healthyReplicas[0]?.id ?? null
+    if (nextReplica && nextReplica !== activeReplica) {
+      activeReplica = nextReplica
+      lastFailoverAt = new Date().toISOString()
+    }
+  }
+
+  const gateway = healthyReplicas.length === 0 ? 'down' : (healthyReplicas.length === replicas.length ? 'healthy' : 'degraded')
+
+  res.json({
+    gateway,
+    replicas,
+    activeReplica,
+    lastFailoverAt
+  })
+})
+
 app.get('/api/sensors', (_req, res) => {
   res.json(SENSOR_POOL)
 })
 
 app.get('/api/history/events', (req, res) => {
-  const { type, sensor_id, region, limit } = req.query
+  const { type, sensor_id, region, limit, offset, from, to } = req.query
 
   const result = historyEvents.filter((event) => {
     const typeOk = !type || event.classification === String(type)
     const sensorOk = !sensor_id || event.sensor_id.toLowerCase().includes(String(sensor_id).toLowerCase())
     const regionOk = !region || event.region.toLowerCase().includes(String(region).toLowerCase())
-    return typeOk && sensorOk && regionOk
+
+    const eventMs = Date.parse(event.timestamp)
+    const fromMs = from ? Date.parse(String(from)) : Number.NEGATIVE_INFINITY
+    const toMs = to ? Date.parse(String(to)) : Number.POSITIVE_INFINITY
+    const timeOk = eventMs >= fromMs && eventMs <= toMs
+
+    return typeOk && sensorOk && regionOk && timeOk
   })
 
   const parsedLimit = Number(limit)
-  const boundedResult = Number.isFinite(parsedLimit) && parsedLimit > 0
-    ? result.slice(0, Math.min(200, Math.round(parsedLimit)))
-    : result
+  const parsedOffset = Number(offset)
+  const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(200, Math.round(parsedLimit)) : 50
+  const safeOffset = Number.isFinite(parsedOffset) && parsedOffset >= 0 ? Math.round(parsedOffset) : 0
 
-  res.json(boundedResult.map((event) => toHistoryEvent(event)))
+  const events = result
+    .slice(safeOffset, safeOffset + safeLimit)
+    .map((event) => toHistoryEvent(event))
+
+  res.json({
+    events,
+    total: result.length,
+    limit: safeLimit,
+    offset: safeOffset
+  })
 })
 
 app.get('/api/mock/stream', (_req, res) => {

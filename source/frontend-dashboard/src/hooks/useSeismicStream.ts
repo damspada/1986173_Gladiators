@@ -150,7 +150,26 @@ export const useSeismicStream = ({
   const [lastError, setLastError] = useState<string | undefined>(
     hasConfiguredSocketUrl ? undefined : 'Missing VITE_LIVE_WS_URL configuration.',
   )
+  const [disconnectHistory, setDisconnectHistory] = useState<StreamSnapshot['disconnectHistory']>([])
+  const [reconnectCount, setReconnectCount] = useState(0)
+  const [maxDisconnectMs, setMaxDisconnectMs] = useState(0)
+  const [totalDisconnectMs, setTotalDisconnectMs] = useState(0)
+  const [sessionStartedAt] = useState(() => new Date().toISOString())
+  const [tickMs, setTickMs] = useState(() => Date.now())
+  const [currentFaultType, setCurrentFaultType] = useState<StreamSnapshot['currentFaultType']>(
+    hasConfiguredSocketUrl ? 'unknown' : 'configuration',
+  )
   const [reconnectSignal, setReconnectSignal] = useState(0)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setTickMs(Date.now())
+    }, 1000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [])
 
   useEffect(() => {
     if (!normalizedSocketUrl) {
@@ -162,6 +181,7 @@ export const useSeismicStream = ({
     let currentAttempt = 0
     let isMounted = true
     let manualClose = false
+    let disconnectStartedAtMs: number | null = null
 
     const dedupeKeys = new Set<string>()
 
@@ -233,6 +253,29 @@ export const useSeismicStream = ({
           setConnectionState('connected')
           setReconnectAttempt(0)
           setLastError(undefined)
+          setCurrentFaultType('unknown')
+
+          if (disconnectStartedAtMs !== null) {
+            const endedAtMs = Date.now()
+            const durationMs = Math.max(0, endedAtMs - disconnectStartedAtMs)
+
+            setDisconnectHistory((previous) => {
+              const next = [
+                {
+                  startedAt: new Date(disconnectStartedAtMs as number).toISOString(),
+                  endedAt: new Date(endedAtMs).toISOString(),
+                  durationMs,
+                  faultType: 'network' as const,
+                },
+                ...previous,
+              ]
+
+              return next.slice(0, 8)
+            })
+            setTotalDisconnectMs((previous) => previous + durationMs)
+            setMaxDisconnectMs((previous) => Math.max(previous, durationMs))
+            disconnectStartedAtMs = null
+          }
         }
 
         socket.onmessage = (message) => {
@@ -300,6 +343,7 @@ export const useSeismicStream = ({
 
           setConnectionState('error')
           setLastError('Socket error detected.')
+          setCurrentFaultType('network')
         }
 
         socket.onclose = () => {
@@ -308,9 +352,15 @@ export const useSeismicStream = ({
           }
 
           setConnectionState('reconnecting')
+          setCurrentFaultType('network')
           const nextAttempt = currentAttempt + 1
           currentAttempt = nextAttempt
           setReconnectAttempt(nextAttempt)
+          setReconnectCount((previous) => previous + 1)
+
+          if (disconnectStartedAtMs === null) {
+            disconnectStartedAtMs = Date.now()
+          }
 
           const delay = Math.min(BASE_DELAY_MS * nextAttempt, MAX_DELAY_MS)
           reconnectTimer = window.setTimeout(() => {
@@ -324,6 +374,7 @@ export const useSeismicStream = ({
 
         setConnectionState('error')
         setLastError('Unable to initialize socket connection.')
+        setCurrentFaultType('configuration')
       }
     }
 
@@ -348,12 +399,27 @@ export const useSeismicStream = ({
     setReconnectSignal((value) => value + 1)
   }, [])
 
+  const sessionStartedMs = Date.parse(sessionStartedAt)
+  const sessionUptimeMs = Number.isNaN(sessionStartedMs)
+    ? 0
+    : Math.max(0, tickMs - sessionStartedMs - totalDisconnectMs)
+  const estimatedLostEvents = Math.max(0, Math.round(totalDisconnectMs / 500))
+
   return {
     connectionState,
     reconnectAttempt,
     events,
     sensors,
     lastError,
+    disconnectHistory,
+    currentFaultType,
+    missionMetrics: {
+      sessionStartedAt,
+      uptimeMs: sessionUptimeMs,
+      reconnectCount,
+      maxDisconnectMs,
+      estimatedLostEvents,
+    },
     forceReconnect,
   }
 }

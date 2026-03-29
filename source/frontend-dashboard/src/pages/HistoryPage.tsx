@@ -3,7 +3,11 @@ import { EventTimeline } from '../components/history/EventTimeline'
 import { HistoryFiltersPanel } from '../components/history/HistoryFilters'
 import { HistoryTimeControls } from '../components/history/HistoryTimeControls'
 import { HistoryTable } from '../components/history/HistoryTable'
+import { ZoneNavLink } from '../components/common/ZoneNavLink'
 import { fetchHistoryEvents } from '../services/historyApi'
+import { groupEventsByIncident } from '../utils/incidents'
+import { classificationLabel } from '../utils/classification'
+import { toEventsCsv, triggerDownload } from '../utils/format'
 import type { HistoryFilterRule, HistoryFilters, HistoryTimeFilter, SeismicEvent } from '../types/seismic'
 
 interface HistoryPageProps {
@@ -103,6 +107,10 @@ export const HistoryPage = ({ onSelectEvent }: HistoryPageProps) => {
   const [rules, setRules] = useState<HistoryFilterRule[]>([])
   const [timeFilter, setTimeFilter] = useState<HistoryTimeFilter>(DEFAULT_TIME_FILTER)
   const [events, setEvents] = useState<SeismicEvent[]>([])
+  const [total, setTotal] = useState(0)
+  const [offset, setOffset] = useState(0)
+  const [limit] = useState(50)
+  const [pagingMode, setPagingMode] = useState<'server' | 'client-fallback'>('server')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -111,20 +119,49 @@ export const HistoryPage = ({ onSelectEvent }: HistoryPageProps) => {
     setError(null)
 
     try {
-      const result = await fetchHistoryEvents(DEFAULT_FILTERS)
-      setEvents(result)
+      const result = await fetchHistoryEvents(DEFAULT_FILTERS, {
+        from: timeFilter.fromUtc ? new Date(`${timeFilter.fromUtc}:00Z`).toISOString() : undefined,
+        to: timeFilter.toUtc ? new Date(`${timeFilter.toUtc}:00Z`).toISOString() : undefined,
+        limit,
+        offset,
+      })
+      setEvents(result.events)
+      setTotal(result.total)
+      setPagingMode(result.pagingMode)
       setError(null)
     } catch (err: unknown) {
       setEvents([])
+      setTotal(0)
       setError(err instanceof Error ? err.message : 'Unable to load history events.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [limit, offset, timeFilter.fromUtc, timeFilter.toUtc])
 
   useEffect(() => {
     void refreshHistory()
   }, [refreshHistory])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.altKey) {
+        return
+      }
+
+      if (event.key === 'ArrowRight' && offset + limit < total) {
+        setOffset((value) => value + limit)
+      }
+
+      if (event.key === 'ArrowLeft' && offset > 0) {
+        setOffset((value) => Math.max(0, value - limit))
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [limit, offset, total])
 
   const latestEventMs = useMemo(() => {
     const timestamps = events
@@ -150,6 +187,20 @@ export const HistoryPage = ({ onSelectEvent }: HistoryPageProps) => {
   )
 
   const handleFiltersChange = (next: HistoryFilterRule[]) => setRules(next)
+  const incidentClusters = useMemo(() => groupEventsByIncident(filteredEvents, 10 * 60 * 1000), [filteredEvents])
+
+  const exportCsv = () => {
+    const csv = toEventsCsv(filteredEvents)
+    triggerDownload(csv, `history-${new Date().toISOString()}.csv`, 'text/csv;charset=utf-8')
+  }
+
+  const exportJson = () => {
+    triggerDownload(
+      JSON.stringify(filteredEvents, null, 2),
+      `history-${new Date().toISOString()}.json`,
+      'application/json;charset=utf-8',
+    )
+  }
 
   return (
     <section className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
@@ -174,8 +225,39 @@ export const HistoryPage = ({ onSelectEvent }: HistoryPageProps) => {
           </button>
         </section>
         <HistoryTimeControls value={timeFilter} onChange={setTimeFilter} anchorMs={latestEventMs} />
+        <section className="tactical-panel p-3">
+          <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-zinc-400">
+            <span>Incident-Focused Clusters</span>
+            <span>{incidentClusters.length} clusters in view</span>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {incidentClusters.slice(0, 6).map((cluster) => (
+              <div key={cluster.id} className="rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-2 py-2 text-xs">
+                <p className="uppercase tracking-[0.08em] text-zinc-100">
+                  <ZoneNavLink zone={cluster.region} className="px-0 py-0 text-zinc-100 hover:text-cyan-200" />
+                </p>
+                <p className="mt-1 text-zinc-400">{cluster.count} events | {classificationLabel[cluster.severity]}</p>
+              </div>
+            ))}
+            {incidentClusters.length === 0 ? (
+              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">No clusters in selected window.</p>
+            ) : null}
+          </div>
+        </section>
         <EventTimeline events={filteredEvents} onSelectEvent={onSelectEvent} />
-        <HistoryTable events={filteredEvents} loading={loading} error={error} onSelectEvent={onSelectEvent} />
+        <HistoryTable
+          events={filteredEvents}
+          loading={loading}
+          error={error}
+          total={total}
+          offset={offset}
+          limit={limit}
+          pagingMode={pagingMode}
+          onPageChange={setOffset}
+          onExportCsv={exportCsv}
+          onExportJson={exportJson}
+          onSelectEvent={onSelectEvent}
+        />
       </div>
     </section>
   )

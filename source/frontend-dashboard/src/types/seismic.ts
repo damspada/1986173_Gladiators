@@ -26,6 +26,7 @@ export interface SeismicEvent {
   durationSeconds?: number
   frequency: number
   classification: EventClassification
+  severity?: 'normal' | 'warning' | 'critical'
   amplitude?: number
   sensor?: SensorMeta
 }
@@ -59,6 +60,53 @@ export interface HistoryQuery {
   region?: string
   from?: string
   to?: string
+  limit?: number
+  offset?: number
+}
+
+export interface HistoryQueryOptions {
+  limit?: number
+  offset?: number
+  from?: string
+  to?: string
+}
+
+export interface HistoryPageResult {
+  events: SeismicEvent[]
+  total: number
+  limit: number
+  offset: number
+  pagingMode: 'server' | 'client-fallback'
+}
+
+export interface InfrastructureReplica {
+  id: string
+  status: 'healthy' | 'down'
+  lagMs: number
+}
+
+export interface InfrastructureStatus {
+  gateway: 'healthy' | 'degraded' | 'down'
+  replicas: InfrastructureReplica[]
+  activeReplica: string | null
+  lastFailoverAt: string | null
+}
+
+export type FaultType = 'network' | 'gateway' | 'replica' | 'configuration' | 'unknown'
+
+export interface DisconnectEvent {
+  startedAt: string
+  endedAt: string
+  durationMs: number
+  faultType: FaultType
+}
+
+export interface MissionMetrics {
+  sessionStartedAt: string
+  uptimeMs: number
+  reconnectCount: number
+  maxDisconnectMs: number
+  estimatedLostEvents: number
 }
 
 export interface StreamSnapshot {
@@ -67,4 +115,7 @@ export interface StreamSnapshot {
   events: SeismicEvent[]
   sensors: SensorMeta[]
   lastError?: string
+  disconnectHistory: DisconnectEvent[]
+  missionMetrics: MissionMetrics
+  currentFaultType: FaultType
 }

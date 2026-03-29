@@ -7,10 +7,10 @@ interface HistoryTimeControlsProps {
 }
 
 const PRESETS: Array<{ label: string; value: Exclude<HistoryTimePreset, null>; durationMs: number }> = [
-  { label: 'Ultima 1h', value: '1h', durationMs: 60 * 60 * 1000 },
-  { label: 'Ultime 6h', value: '6h', durationMs: 6 * 60 * 60 * 1000 },
-  { label: 'Ultime 24h', value: '24h', durationMs: 24 * 60 * 60 * 1000 },
-  { label: 'Ultimi 7 giorni', value: '7d', durationMs: 7 * 24 * 60 * 60 * 1000 },
+  { label: 'Last 1h', value: '1h', durationMs: 60 * 60 * 1000 },
+  { label: 'Last 6h', value: '6h', durationMs: 6 * 60 * 60 * 1000 },
+  { label: 'Last 24h', value: '24h', durationMs: 24 * 60 * 60 * 1000 },
+  { label: 'Last 7 days', value: '7d', durationMs: 7 * 24 * 60 * 60 * 1000 },
 ]
 
 const pad = (value: number): string => String(value).padStart(2, '0')
@@ -68,7 +68,7 @@ export const HistoryTimeControls = ({ value, onChange, anchorMs }: HistoryTimeCo
 
       <div className="grid gap-2 md:grid-cols-2">
         <label className="space-y-1 text-[11px] uppercase tracking-[0.16em] text-zinc-400">
-          <span>Da (UTC)</span>
+          <span>From (UTC)</span>
           <input
             type="datetime-local"
             className="w-full rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs text-zinc-100"
@@ -78,7 +78,7 @@ export const HistoryTimeControls = ({ value, onChange, anchorMs }: HistoryTimeCo
         </label>
 
         <label className="space-y-1 text-[11px] uppercase tracking-[0.16em] text-zinc-400">
-          <span>A (UTC)</span>
+          <span>To (UTC)</span>
           <input
             type="datetime-local"
             className="w-full rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs text-zinc-100"
