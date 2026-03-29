@@ -50,12 +50,12 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectEvent }: SensorGr
 
   return (
     <section className="tactical-panel relative min-h-[20rem] overflow-hidden p-4">
-      <div className="relative z-10 flex items-center justify-between pb-3 text-xs uppercase tracking-[0.22em] text-zinc-400">
+      <div className="section-greeble relative z-10 flex items-center justify-between pb-3 text-xs uppercase tracking-[0.22em] text-zinc-400">
         <span>Global Sensor Map</span>
         <span>{sensors.length} units online</span>
       </div>
 
-      <div className="relative z-10 h-[16.5rem] rounded-sm border border-zinc-700/80 bg-zinc-950/70">
+      <div className="relative z-10 h-[16.5rem] border border-zinc-700/80 bg-zinc-950/70">
         {sensors.length === 0 ? (
           <div className="flex h-full items-center justify-center text-sm uppercase tracking-[0.2em] text-zinc-500">
             Waiting for sensor telemetry...

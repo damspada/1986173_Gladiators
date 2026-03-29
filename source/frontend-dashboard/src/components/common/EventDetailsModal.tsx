@@ -33,15 +33,15 @@ export const EventDetailsModal = ({ event, onClose }: EventDetailsModalProps) =>
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-3 py-4 backdrop-blur-[1px]">
-      <div className="tactical-panel w-[min(96vw,44rem)] border-zinc-600/80 bg-zinc-950/95 p-4">
+      <div className="cyber-modal tactical-panel w-[min(96vw,44rem)] border-zinc-600/80 bg-zinc-950/95 p-4">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-400">Event Detail</p>
+            <p className="section-greeble text-[10px] uppercase tracking-[0.22em] text-zinc-400">Event Detail</p>
             <h3 className="mt-1 text-sm uppercase tracking-[0.18em] text-zinc-100">Sensor {event.sensor_id}</h3>
           </div>
           <button
             type="button"
-            className="rounded-sm border border-zinc-600 bg-zinc-900 px-2 py-1 text-xs uppercase tracking-[0.14em] text-zinc-300 transition hover:border-zinc-400 hover:text-zinc-100"
+            className="cyber-button border border-zinc-600 bg-zinc-900 px-2 py-1 text-xs uppercase tracking-[0.14em] text-zinc-300 transition hover:border-zinc-400 hover:text-zinc-100"
             onClick={onClose}
           >
             Close
@@ -54,7 +54,7 @@ export const EventDetailsModal = ({ event, onClose }: EventDetailsModalProps) =>
               <span>Classification</span>
               <span
                 className={clsx(
-                  'inline-flex max-w-fit rounded-sm border px-2 py-1 text-[10px] uppercase tracking-[0.1em]',
+                  'classification-chip inline-flex max-w-fit border px-2 py-1 text-[10px] uppercase tracking-[0.1em]',
                   classificationBadgeClass[event.classification],
                 )}
               >
@@ -86,7 +86,7 @@ export const EventDetailsModal = ({ event, onClose }: EventDetailsModalProps) =>
           <div className="rounded-sm border border-zinc-700/80 bg-zinc-900/45 p-2">
             <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">Detection Map</p>
             {location ? (
-              <div className="h-48 overflow-hidden rounded-sm border border-zinc-700/70">
+              <div className="h-48 overflow-hidden border border-zinc-700/70">
                 <MapContainer
                   center={location}
                   zoom={5}
@@ -102,7 +102,7 @@ export const EventDetailsModal = ({ event, onClose }: EventDetailsModalProps) =>
                 </MapContainer>
               </div>
             ) : (
-              <div className="flex h-48 items-center justify-center rounded-sm border border-zinc-700/70 text-[11px] uppercase tracking-[0.14em] text-zinc-500">
+              <div className="flex h-48 items-center justify-center border border-zinc-700/70 text-[11px] uppercase tracking-[0.14em] text-zinc-500">
                 Location unavailable for this event
               </div>
             )}

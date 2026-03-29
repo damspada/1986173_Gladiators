@@ -22,8 +22,8 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-zinc-950 text-zinc-100">
-        <div className="relative mx-auto flex min-h-screen w-full max-w-[1300px] flex-col gap-4 px-3 py-4 md:px-5 md:py-6">
+      <div className="cyberdeck-root text-zinc-100">
+        <div className="cyberdeck-layout relative mx-auto flex min-h-screen w-full max-w-[1300px] flex-col gap-4 px-3 py-4 md:px-5 md:py-6">
           <div className="absolute inset-0 -z-10 opacity-40 [background:radial-gradient(circle_at_20%_0%,rgba(34,211,238,0.18),transparent_30%),radial-gradient(circle_at_90%_10%,rgba(190,24,93,0.15),transparent_35%),linear-gradient(#0a0a0a,#0a0a0a)]" />
 
           <CommandHeader

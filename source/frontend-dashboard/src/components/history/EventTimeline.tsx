@@ -18,9 +18,9 @@ const MIN_WINDOW_RATIO = 0.14
 const DEFAULT_WINDOW_RATIO = 0.34
 
 const toneClass: Record<SeismicEvent['classification'], string> = {
-  EARTHQUAKE: 'border-cyan-300/80 bg-cyan-500 text-cyan-100 shadow-[0_0_12px_rgba(34,211,238,0.75)]',
-  CONVENTIONAL_EXPLOSION: 'border-amber-300/80 bg-amber-500 text-amber-100 shadow-[0_0_12px_rgba(245,158,11,0.75)]',
-  NUCLEAR_LIKE: 'border-rose-300/80 bg-rose-600 text-rose-100 shadow-[0_0_12px_rgba(225,29,72,0.75)]',
+  EARTHQUAKE: 'timeline-dot-earthquake',
+  CONVENTIONAL_EXPLOSION: 'timeline-dot-explosion',
+  NUCLEAR_LIKE: 'timeline-dot-nuclear',
 }
 
 const toMs = (value: string | undefined): number | undefined => {
@@ -260,7 +260,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
   if (!hasEvents) {
     return (
       <section className="tactical-panel p-4">
-        <h2 className="mb-3 text-xs uppercase tracking-[0.26em] text-zinc-400">Event Timeline</h2>
+        <h2 className="section-greeble mb-3 text-xs uppercase tracking-[0.26em] text-zinc-400">Event Timeline</h2>
         <p className="py-6 text-sm uppercase tracking-[0.2em] text-zinc-500">No historical events match current filters.</p>
       </section>
     )
@@ -269,32 +269,32 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
   return (
     <section className="tactical-panel p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xs uppercase tracking-[0.26em] text-zinc-400">Event Timeline</h2>
+        <h2 className="section-greeble text-xs uppercase tracking-[0.26em] text-zinc-400">Event Timeline</h2>
         <div className="flex items-center gap-1">
           <button
             type="button"
-            className="rounded-sm border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
+            className="cyber-button border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
             onClick={zoomIn}
           >
             Zoom In
           </button>
           <button
             type="button"
-            className="rounded-sm border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
+            className="cyber-button border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
             onClick={zoomOut}
           >
             Zoom Out
           </button>
           <button
             type="button"
-            className="rounded-sm border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
+            className="cyber-button border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
             onClick={resetZoom}
           >
             Reset
           </button>
           <button
             type="button"
-            className="rounded-sm border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
+            className="cyber-button border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
             onClick={jumpToLatest}
           >
             Latest
@@ -374,7 +374,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
                       <div
                         key={`point-${event.event_id}`}
                         className={clsx(
-                          'group absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border-2',
+                          'timeline-dot group absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-pointer border-2 u-neon-flicker',
                           toneClass[event.classification],
                         )}
                         style={{ left: `${leftPct}%`, top: `${centerY}px` }}
@@ -388,9 +388,9 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
                           }
                         }}
                       >
-                        <span className="pointer-events-none absolute inset-0 animate-pulse rounded-full border border-current opacity-35" />
+                        <span className="pointer-events-none absolute inset-0 animate-pulse border border-current opacity-35" />
 
-                        <div className="pointer-events-none absolute -top-2 left-1/2 z-10 hidden w-64 -translate-x-1/2 -translate-y-full rounded-sm border border-zinc-600 bg-zinc-950/95 p-2 text-[11px] tracking-[0.04em] text-zinc-200 shadow-[0_12px_24px_rgba(0,0,0,0.55)] group-hover:block">
+                        <div className="pointer-events-none absolute -top-2 left-1/2 z-10 hidden w-64 -translate-x-1/2 -translate-y-full border border-zinc-600 bg-zinc-950/95 p-2 text-[11px] tracking-[0.04em] text-zinc-200 shadow-[0_12px_24px_rgba(0,0,0,0.55)] group-hover:block">
                           <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">{event.sensor_id}</p>
                           <p className="mt-1">Type: {classificationLabel[event.classification]}</p>
                           <p>Frequency: {event.frequency.toFixed(2)} Hz</p>
@@ -411,15 +411,15 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
             <p>Navigator (Zoom & Pan)</p>
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-cyan-400" />Earthquake</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400" />Conventional</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" />Nuclear-like</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 bg-cyan-400" />Earthquake</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 bg-amber-400" />Conventional</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 bg-rose-500" />Nuclear-like</span>
             </div>
           </div>
 
           <div
             ref={minimapRef}
-            className="relative h-9 rounded-sm border border-zinc-700/80 bg-[linear-gradient(90deg,rgba(34,211,238,0.06),transparent_35%,transparent_65%,rgba(225,29,72,0.06))]"
+            className="relative h-9 border border-zinc-700/80 bg-[linear-gradient(90deg,rgba(34,211,238,0.06),transparent_35%,transparent_65%,rgba(225,29,72,0.06))]"
             onWheel={handleMinimapWheel}
             onClick={handleMinimapClick}
           >
@@ -431,7 +431,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
               return (
                 <span
                   key={`mini-${event.event_id}`}
-                  className={clsx('absolute top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full', {
+                  className={clsx('absolute top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2', {
                     'bg-cyan-400': event.classification === 'EARTHQUAKE',
                     'bg-amber-400': event.classification === 'CONVENTIONAL_EXPLOSION',
                     'bg-rose-500': event.classification === 'NUCLEAR_LIKE',
@@ -442,7 +442,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
             })}
 
             <div
-              className="absolute bottom-0 top-0 cursor-grab rounded-sm border border-cyan-300/80 bg-cyan-400/20 active:cursor-grabbing"
+              className="absolute bottom-0 top-0 cursor-grab border border-cyan-300/80 bg-cyan-400/20 active:cursor-grabbing"
               style={{
                 left: `${safeWindowStart * 100}%`,
                 width: `${safeWindowWidth * 100}%`,

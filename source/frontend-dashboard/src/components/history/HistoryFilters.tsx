@@ -66,13 +66,13 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
 
   return (
     <aside className="tactical-panel h-fit space-y-4 bg-[#0a0a0a] p-4 font-mono">
-      <h2 className="text-sm uppercase tracking-[0.3em] text-zinc-200">Filters</h2>
+      <h2 className="section-greeble text-sm uppercase tracking-[0.3em] text-zinc-200">Filters</h2>
 
       <label className="block space-y-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
         <span>Event Type</span>
         <div className="flex gap-1">
           <select
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
+            className="cyber-input min-w-0 flex-1 border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
             value={eventTypeInput}
             onChange={(event) => setEventTypeInput(event.target.value as EventClassification)}
           >
@@ -84,14 +84,14 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
           </select>
           <button
             type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
+            className="cyber-button border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
             onClick={() => addRule('type', 'include', eventTypeInput)}
           >
             +
           </button>
           <button
             type="button"
-            className="rounded-sm border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
+            className="cyber-button border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
             onClick={() => addRule('type', 'exclude', eventTypeInput)}
           >
             -
@@ -103,7 +103,7 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
         <span>Sensor ID</span>
         <div className="flex gap-1">
           <input
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
+            className="cyber-input min-w-0 flex-1 border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
             list="sensor-options"
             value={sensorInput}
             onChange={(event) => setSensorInput(event.target.value)}
@@ -111,14 +111,14 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
           />
           <button
             type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
+            className="cyber-button border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
             onClick={() => addRule('sensor', 'include', sensorInput)}
           >
             +
           </button>
           <button
             type="button"
-            className="rounded-sm border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
+            className="cyber-button border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
             onClick={() => addRule('sensor', 'exclude', sensorInput)}
           >
             -
@@ -135,7 +135,7 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
         <span>Region</span>
         <div className="flex gap-1">
           <input
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
+            className="cyber-input min-w-0 flex-1 border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
             list="region-options"
             value={regionInput}
             onChange={(event) => setRegionInput(event.target.value)}
@@ -143,14 +143,14 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
           />
           <button
             type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
+            className="cyber-button border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
             onClick={() => addRule('region', 'include', regionInput)}
           >
             +
           </button>
           <button
             type="button"
-            className="rounded-sm border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
+            className="cyber-button border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
             onClick={() => addRule('region', 'exclude', regionInput)}
           >
             -
@@ -164,7 +164,7 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
       </label>
 
       <section className="space-y-2 border border-zinc-700/80 bg-zinc-950/60 p-2">
-        <h3 className="text-xs uppercase tracking-[0.22em] text-zinc-300">Active Filters</h3>
+        <h3 className="section-greeble text-xs uppercase tracking-[0.22em] text-zinc-300">Active Filters</h3>
 
         {value.length === 0 ? (
           <p className="text-[11px] uppercase tracking-[0.12em] text-zinc-500">No active rules.</p>
@@ -175,14 +175,14 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
                 key={`${rule.category}-${rule.mode}-${rule.value}-${index}`}
                 className={
                   rule.mode === 'include'
-                    ? 'inline-flex items-center gap-2 rounded-sm border border-cyan-400/70 bg-cyan-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-cyan-200 shadow-[0_0_10px_rgba(34,211,238,0.22)]'
-                    : 'inline-flex items-center gap-2 rounded-sm border border-rose-500/80 bg-rose-600/10 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-rose-200 shadow-[0_0_10px_rgba(225,29,72,0.2)]'
+                    ? 'inline-flex items-center gap-2 border border-cyan-400/70 bg-cyan-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-cyan-200 shadow-[0_0_10px_rgba(34,211,238,0.22)]'
+                    : 'inline-flex items-center gap-2 border border-rose-500/80 bg-rose-600/10 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-rose-200 shadow-[0_0_10px_rgba(225,29,72,0.2)]'
                 }
               >
                 <span className={rule.mode === 'exclude' ? 'line-through decoration-rose-300/70' : ''}>{ruleText(rule)}</span>
                 <button
                   type="button"
-                  className="rounded-sm border border-current px-1 leading-none text-[10px]"
+                  className="border border-current px-1 leading-none text-[10px]"
                   onClick={() => removeRule(index)}
                   aria-label={`Remove ${ruleText(rule)}`}
                 >

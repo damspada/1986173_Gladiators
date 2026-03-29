@@ -28,7 +28,7 @@ export const classificationLabel: Record<EventClassification, string> = {
 }
 
 export const classificationBadgeClass: Record<EventClassification, string> = {
-  EARTHQUAKE: 'text-cyan-300 border-cyan-500/50 bg-cyan-500/10',
-  CONVENTIONAL_EXPLOSION: 'text-amber-300 border-amber-500/50 bg-amber-500/10',
-  NUCLEAR_LIKE: 'text-rose-300 border-rose-600/50 bg-rose-600/10',
+  EARTHQUAKE: 'classification-chip classification-earthquake',
+  CONVENTIONAL_EXPLOSION: 'classification-chip classification-explosion',
+  NUCLEAR_LIKE: 'classification-chip classification-nuclear',
 }

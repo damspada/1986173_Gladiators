@@ -1,24 +1,30 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
 @import 'tailwindcss';
 
 :root {
-  --bg-main: #0a0a0a;
-  --bg-elev: #111315;
-  --line: rgba(115, 122, 128, 0.42);
-  --line-strong: rgba(156, 163, 175, 0.6);
-  --txt-main: #f1f5f9;
-  --txt-muted: #9ca3af;
-  --earthquake: #22d3ee;
-  --explosion: #f59e0b;
-  --nuclear: #e11d48;
+  --bg-main: #050505;
+  --bg-elev: #090909;
+  --line: rgba(0, 255, 170, 0.33);
+  --line-strong: rgba(0, 255, 0, 0.64);
+  --txt-main: #00ff00;
+  --txt-muted: #74a974;
+  --txt-amber: #ffb000;
+  --earthquake: #00ffff;
+  --explosion: #ffa500;
+  --nuclear: #ff003c;
+  --danger: #ff4d5a;
+  --crt-scanline: rgba(0, 0, 0, 0.34);
+  --crt-grid: rgba(0, 255, 170, 0.08);
+  --phosphor-glow: 0 0 5px rgba(0, 255, 0, 0.82), 0 0 13px rgba(0, 255, 0, 0.35);
 }
 
 @theme {
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-mono: 'Share Tech Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 * {
   box-sizing: border-box;
+  border-radius: 0 !important;
 }
 
 html,
@@ -28,39 +34,272 @@ body,
 }
 
 body {
+  position: relative;
   margin: 0;
   background: var(--bg-main);
   color: var(--txt-main);
   font-family: var(--font-mono);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   text-rendering: optimizeLegibility;
+  text-shadow: var(--phosphor-glow);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.tactical-panel {
-  border: 1px solid var(--line);
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+}
+
+body::before {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    var(--crt-scanline) 3px,
+    var(--crt-scanline) 4px
+  );
+  mix-blend-mode: soft-light;
+  opacity: 0.43;
+}
+
+body::after {
   background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 35%),
-    linear-gradient(0deg, rgba(10, 10, 10, 0.88), rgba(10, 10, 10, 0.88)),
+    linear-gradient(var(--crt-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--crt-grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.15;
+}
+
+h1,
+h2,
+h3,
+.u-terminal-title {
+  font-family: 'VT323', var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+button,
+input,
+select {
+  font-family: var(--font-mono);
+}
+
+.cyberdeck-root {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 16% -8%, rgba(0, 255, 255, 0.11), transparent 33%),
+    radial-gradient(circle at 84% -6%, rgba(255, 0, 60, 0.1), transparent 38%),
+    linear-gradient(180deg, #070707 0%, #030303 100%);
+}
+
+.cyberdeck-layout {
+  position: relative;
+}
+
+.tactical-panel {
+  border: 3px double var(--line-strong);
+  background:
+    linear-gradient(160deg, rgba(0, 255, 170, 0.07), transparent 36%),
+    linear-gradient(0deg, rgba(4, 15, 4, 0.84), rgba(4, 15, 4, 0.84)),
     var(--bg-elev);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.015),
-    0 18px 30px rgba(0, 0, 0, 0.35);
+    inset 0 0 0 1px rgba(0, 255, 0, 0.25),
+    inset 0 0 18px rgba(0, 255, 0, 0.14),
+    0 0 0 2px rgba(0, 0, 0, 0.92),
+    0 12px 28px rgba(0, 0, 0, 0.7);
+}
+
+.tactical-panel > h2::before,
+.tactical-panel > p:first-child::before,
+.section-greeble::before {
+  content: '[//] ';
+  color: var(--txt-amber);
+  margin-right: 0.35rem;
+}
+
+.cyber-button {
+  border: 2px solid var(--line-strong);
+  background: rgba(0, 255, 0, 0.08);
+  color: var(--txt-main);
+  text-shadow: var(--phosphor-glow);
+}
+
+.cyber-button:hover {
+  border-color: var(--txt-main);
+  background: rgba(0, 255, 0, 0.18);
+  color: #021102;
+  text-shadow: none;
+}
+
+.cyber-input {
+  border: 2px solid var(--line);
+  background: rgba(0, 0, 0, 0.88);
+  color: var(--txt-main);
+}
+
+.cyber-input:focus {
+  outline: none;
+  border-color: var(--line-strong);
+  box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.2), 0 0 10px rgba(0, 255, 0, 0.32);
+}
+
+.cyber-table-shell {
+  border: 2px solid var(--line-strong);
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.cyber-table-head {
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--txt-amber);
+  text-shadow: 0 0 8px rgba(255, 176, 0, 0.4);
+}
+
+.cyber-table-body {
+  background: rgba(0, 12, 0, 0.36);
+}
+
+.cyber-table-row {
+  border-bottom: 1px solid rgba(0, 255, 0, 0.22);
+  color: #a6f7a6;
+  animation: rowFlicker 7s steps(2, end) infinite;
+}
+
+.cyber-table-row:hover,
+.cyber-table-row:focus-within {
+  background: #00ff00 !important;
+  color: #020202 !important;
+  text-shadow: none;
+}
+
+.cyber-table-row:hover *,
+.cyber-table-row:focus-within * {
+  color: #020202 !important;
+  text-shadow: none !important;
+}
+
+.classification-chip {
+  border-width: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+.classification-earthquake {
+  border-color: var(--earthquake);
+  color: var(--earthquake);
+  background: rgba(0, 255, 255, 0.11);
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+}
+
+.classification-explosion {
+  border-color: var(--explosion);
+  color: var(--explosion);
+  background: rgba(255, 165, 0, 0.11);
+  text-shadow: 0 0 10px rgba(255, 165, 0, 0.64);
+}
+
+.classification-nuclear {
+  border-color: var(--nuclear);
+  color: var(--nuclear);
+  background: rgba(255, 0, 60, 0.13);
+  text-shadow: 0 0 11px rgba(255, 0, 60, 0.72);
+}
+
+.status-chip {
+  border: 2px solid var(--line-strong);
+  background: rgba(1, 16, 1, 0.87);
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border: 1px solid currentColor;
+}
+
+.status-connected {
+  color: var(--txt-main);
+  background: var(--txt-main);
+  box-shadow: 0 0 12px rgba(0, 255, 0, 0.9);
+}
+
+.status-connecting,
+.status-reconnecting {
+  color: var(--explosion);
+  background: var(--explosion);
+  box-shadow: 0 0 12px rgba(255, 165, 0, 0.92);
+}
+
+.status-disconnected,
+.status-error {
+  color: var(--danger);
+  background: var(--danger);
+  box-shadow: 0 0 13px rgba(255, 77, 90, 0.92);
+}
+
+.status-label.is-online,
+.u-neon-flicker {
+  animation: neonFlicker 2.7s infinite steps(2, end);
+}
+
+@keyframes neonFlicker {
+  0%,
+  18%,
+  22%,
+  36%,
+  84%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+
+  20%,
+  34% {
+    opacity: 0.72;
+    filter: brightness(0.82);
+  }
+
+  85% {
+    opacity: 0.54;
+    filter: brightness(0.63);
+  }
+}
+
+@keyframes rowFlicker {
+  0%,
+  95%,
+  100% {
+    opacity: 1;
+  }
+
+  96% {
+    opacity: 0.86;
+  }
+
+  98% {
+    opacity: 0.94;
+  }
 }
 
 @keyframes sensorPulse {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
+    box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.68);
   }
+
   70% {
     transform: scale(1.45);
-    box-shadow: 0 0 0 14px rgba(34, 211, 238, 0);
+    box-shadow: 0 0 0 14px rgba(0, 255, 255, 0);
   }
+
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0);
+    box-shadow: 0 0 0 0 rgba(0, 255, 255, 0);
   }
 }
 
@@ -69,24 +308,26 @@ body {
 }
 
 .sensor-world-map {
-  background: #090b0d;
+  background: #030803;
+  border: 2px solid var(--line);
 }
 
 .sensor-world-map .leaflet-control-zoom a {
-  background: #101317;
-  color: #d1d5db;
-  border-color: rgba(115, 122, 128, 0.42);
+  background: rgba(0, 0, 0, 0.88);
+  color: var(--txt-main);
+  border: 2px solid var(--line-strong);
+  text-shadow: var(--phosphor-glow);
 }
 
 .sensor-world-map .leaflet-control-attribution {
-  background: rgba(10, 10, 10, 0.7);
-  color: #9ca3af;
+  background: rgba(0, 0, 0, 0.78);
+  color: var(--txt-muted);
   font-family: var(--font-mono);
   font-size: 10px;
 }
 
 .sensor-world-map .leaflet-tile {
-  filter: brightness(0.45) contrast(1.25) saturate(0.75) hue-rotate(175deg);
+  filter: grayscale(100%) sepia(100%) hue-rotate(95deg) saturate(240%) brightness(0.54) contrast(1.52);
 }
 
 .sensor-marker-wrapper {
@@ -97,11 +338,11 @@ body {
 .sensor-marker {
   position: relative;
   display: block;
-  width: 14px;
-  height: 14px;
-  border-radius: 9999px;
-  border: 2px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 0 14px rgba(34, 211, 238, 0.8);
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(0, 255, 0, 0.88);
+  box-shadow: 0 0 14px rgba(0, 255, 255, 0.82);
+  animation: rowFlicker 6s infinite;
 }
 
 .sensor-marker.eq {
@@ -112,39 +353,70 @@ body {
 .sensor-marker.exp {
   background: var(--explosion);
   color: var(--explosion);
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.85);
+  box-shadow: 0 0 14px rgba(255, 165, 0, 0.85);
 }
 
 .sensor-marker.nuc {
   background: var(--nuclear);
   color: var(--nuclear);
-  box-shadow: 0 0 15px rgba(225, 29, 72, 0.9);
+  box-shadow: 0 0 15px rgba(255, 0, 60, 0.9);
 }
 
 .sensor-marker.is-hot::after {
   content: '';
   position: absolute;
   inset: -8px;
-  border-radius: 9999px;
   border: 1px solid currentColor;
   opacity: 0.7;
   animation: sensorPulse 1.5s ease-out infinite;
 }
 
 .sensor-map-tooltip {
-  background: rgba(10, 12, 14, 0.95);
-  color: #f3f4f6;
-  border: 1px solid rgba(115, 122, 128, 0.62);
-  border-radius: 4px;
-  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.94);
+  color: var(--txt-main);
+  border: 2px solid var(--line-strong);
+  box-shadow: 0 0 14px rgba(0, 255, 0, 0.32);
 }
 
 .sensor-map-tooltip::before {
-  border-top-color: rgba(115, 122, 128, 0.62) !important;
+  border-top-color: var(--line-strong) !important;
+}
+
+.timeline-dot {
+  border-width: 2px;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.timeline-dot-earthquake {
+  color: var(--earthquake);
+  background: var(--earthquake);
+  border-color: rgba(0, 255, 255, 0.9);
+}
+
+.timeline-dot-explosion {
+  color: var(--explosion);
+  background: var(--explosion);
+  border-color: rgba(255, 165, 0, 0.9);
+}
+
+.timeline-dot-nuclear {
+  color: var(--nuclear);
+  background: var(--nuclear);
+  border-color: rgba(255, 0, 60, 0.9);
+}
+
+.cyber-modal {
+  border: 3px double var(--line-strong);
+  background: rgba(0, 0, 0, 0.94);
+  box-shadow: inset 0 0 24px rgba(0, 255, 0, 0.13), 0 0 28px rgba(0, 0, 0, 0.78);
 }
 
 @media (max-width: 900px) {
   body {
     font-size: 14px;
+  }
+
+  .tactical-panel {
+    border-width: 2px;
   }
 }

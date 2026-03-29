@@ -161,12 +161,12 @@ export const HistoryPage = ({ onSelectEvent }: HistoryPageProps) => {
       />
       <div className="space-y-4">
         <section className="tactical-panel flex items-center justify-between gap-2 bg-[#0a0a0a] p-3 font-mono">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-400">
+          <p className="section-greeble text-[11px] uppercase tracking-[0.2em] text-zinc-400">
             History sync control
           </p>
           <button
             type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-500"
+            className="cyber-button border border-cyan-500/70 bg-cyan-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-500"
             onClick={() => void refreshHistory()}
             disabled={loading}
           >
