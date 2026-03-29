@@ -30,6 +30,43 @@ public interface EventRepository extends Neo4jRepository<Event, String> {
             @Param("to") Instant to
     );
 
+    @Query("""
+            MATCH (e:SeismicEvent)
+            WHERE ($classification IS NULL OR e.classification = $classification)
+              AND ($sensorId IS NULL OR toLower(e.sensorId) CONTAINS toLower($sensorId))
+              AND ($region IS NULL OR toLower(e.region) CONTAINS toLower($region))
+              AND ($from IS NULL OR e.timestamp >= $from)
+              AND ($to IS NULL OR e.timestamp <= $to)
+            RETURN e ORDER BY e.timestamp DESC
+            SKIP $offset LIMIT $limit
+            """)
+    List<Event> findByFiltersPaged(
+            @Param("classification") String classification,
+            @Param("sensorId") String sensorId,
+            @Param("region") String region,
+            @Param("from") Instant from,
+            @Param("to") Instant to,
+            @Param("offset") int offset,
+            @Param("limit") int limit
+    );
+
+    @Query("""
+            MATCH (e:SeismicEvent)
+            WHERE ($classification IS NULL OR e.classification = $classification)
+              AND ($sensorId IS NULL OR toLower(e.sensorId) CONTAINS toLower($sensorId))
+              AND ($region IS NULL OR toLower(e.region) CONTAINS toLower($region))
+              AND ($from IS NULL OR e.timestamp >= $from)
+              AND ($to IS NULL OR e.timestamp <= $to)
+            RETURN count(e)
+            """)
+    long countByFilters(
+            @Param("classification") String classification,
+            @Param("sensorId") String sensorId,
+            @Param("region") String region,
+            @Param("from") Instant from,
+            @Param("to") Instant to
+    );
+
     // ── Confirmed events (majority of replicas agreed) ───────────────────────
     @Query("""
             MATCH (e:SeismicEvent)

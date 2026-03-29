@@ -17,5 +17,5 @@ FROM nginx:1.27-alpine AS runtime
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 
-ENV BACKEND_UPSTREAM=backend:8080
+ENV BACKEND_UPSTREAM=backend:8090
 EXPOSE 80

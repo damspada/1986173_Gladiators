@@ -18,6 +18,7 @@ services:
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: password
       REPLICA_COUNT: 3
+      BACKEND_URL: http://backend:8090
     networks:
       - gladiators-net
 

@@ -1,6 +1,7 @@
 package org.example.service;
 
 import org.example.dto.CorroborationDto;
+import org.example.dto.HistoryPageDto;
 import org.example.dto.SeismicEventDto;
 import org.example.model.Classification;
 import org.example.model.Event;
@@ -39,6 +40,20 @@ public class EventService {
                 .stream()
                 .map(SeismicEventDto::forHistory)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public HistoryPageDto findByFiltersPaged(Classification type, String sensorId,
+                                             String region, Instant from, Instant to,
+                                             int offset, int limit) {
+        String classification = type != null ? type.name() : null;
+        long total = eventRepository.countByFilters(classification, sensorId, region, from, to);
+        List<SeismicEventDto> events = eventRepository
+                .findByFiltersPaged(classification, sensorId, region, from, to, offset, limit)
+                .stream()
+                .map(SeismicEventDto::forHistory)
+                .toList();
+        return new HistoryPageDto(events, total, limit, offset);
     }
 
     @Transactional(readOnly = true)
@@ -87,8 +102,10 @@ public class EventService {
     // ── Write ────────────────────────────────────────────────────────────────
 
     public Event save(Event event) {
-        // eventId is deterministic (MD5 by replicas) — skip if already persisted
+        // eventId is deterministic (MD5 by replicas) — skip Neo4j write if already persisted,
+        // but always broadcast so the first replica's notification reaches the WebSocket clients.
         if (event.getEventId() != null && eventRepository.existsById(event.getEventId())) {
+            webSocketHandler.broadcast(SeismicEventDto.forRealtime(event));
             return event;
         }
         Event saved = eventRepository.save(event);

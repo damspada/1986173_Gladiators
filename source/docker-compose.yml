@@ -3,7 +3,7 @@ include:
   - backend/docker-compose.yml
   - broker/docker-compose.yml
   - replicas/docker-compose.yml
-  - frontend-dashboard/docker-compose.yml
+  - frontend/docker-compose.yml
 
 services:
   simulator:
