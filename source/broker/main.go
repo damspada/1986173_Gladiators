@@ -8,11 +8,17 @@ import (
 )
 
 func main() {
+	// crea l'hub che notifica il backend dei cambi di stato replica
+	backendHub := newBackendHub()
+
 	// crea l'hub che gestisce le repliche
-	hub := newHub()
+	hub := newHub(backendHub)
 
 	// esponi l'endpoint SSE per le repliche
 	http.HandleFunc("/stream", hub.handleSSE)
+
+	// esponi il WebSocket per il backend (stato delle repliche)
+	http.HandleFunc("/backend/ws", backendHub.handleBackendWS)
 
 	// avvia il server HTTP in background così le repliche possono connettersi subito
 	go func() {

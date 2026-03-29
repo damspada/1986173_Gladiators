@@ -14,13 +14,15 @@ type Client struct {
 
 // Hub gestisce tutte le repliche connesse
 type Hub struct {
-	clients map[string]*Client // mappa id -> client
-	mu      sync.RWMutex       // protegge la mappa
+	clients    map[string]*Client // mappa id -> client
+	mu         sync.RWMutex       // protegge la mappa
+	backendHub *BackendHub        // notifica il backend dei cambi di stato
 }
 
-func newHub() *Hub {
+func newHub(backendHub *BackendHub) *Hub {
 	return &Hub{
-		clients: make(map[string]*Client),
+		clients:    make(map[string]*Client),
+		backendHub: backendHub,
 	}
 }
 
@@ -30,6 +32,7 @@ func (h *Hub) aggiungi(client *Client) {
 	defer h.mu.Unlock()
 	h.clients[client.id] = client
 	fmt.Printf("Replica connessa: %s\n", client.id)
+	go h.backendHub.notifyReplicaStatus(client.id, "connected")
 }
 
 // rimuove una replica
@@ -39,6 +42,7 @@ func (h *Hub) rimuovi(client *Client) {
 	delete(h.clients, client.id)
 	close(client.channel) // chiudi il canale
 	fmt.Printf("Replica disconnessa: %s\n", client.id)
+	go h.backendHub.notifyReplicaStatus(client.id, "disconnected")
 }
 
 // manda un messaggio a tutte le repliche
