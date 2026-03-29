@@ -1,214 +1,158 @@
-import { useState } from 'react'
-import type { EventClassification, HistoryFilterRule, FilterRuleCategory, FilterRuleMode } from '../../types/seismic'
+import React from 'react'
+import type { EventClassification, HistoryFilters, HistoryTimeFilter, HistoryTimePreset } from '../../types/seismic'
 
 interface HistoryFiltersProps {
-  value: HistoryFilterRule[]
+  filters: HistoryFilters
   availableSensors: string[]
   availableRegions: string[]
-  onChange: (next: HistoryFilterRule[]) => void
+  timeFilter: HistoryTimeFilter
+  anchorMs: number
+  loading: boolean
+  onFiltersChange: (next: HistoryFilters) => void
+  onTimeFilterChange: (next: HistoryTimeFilter) => void
+  onRefresh: () => void
 }
 
-const EVENT_TYPE_OPTIONS: Array<{ label: string; value: EventClassification }> = [
-  { label: 'Earthquake', value: 'EARTHQUAKE' },
-  { label: 'Conventional Explosion', value: 'CONVENTIONAL_EXPLOSION' },
-  { label: 'Nuclear-like Event', value: 'NUCLEAR_LIKE' },
+const PRESETS: Array<{ label: string; value: Exclude<HistoryTimePreset, null>; durationMs: number }> = [
+  { label: '1h', value: '1h', durationMs: 60 * 60 * 1000 },
+  { label: '6h', value: '6h', durationMs: 6 * 60 * 60 * 1000 },
+  { label: '24h', value: '24h', durationMs: 24 * 60 * 60 * 1000 },
+  { label: '7d', value: '7d', durationMs: 7 * 24 * 60 * 60 * 1000 },
 ]
 
-const categoryLabel: Record<FilterRuleCategory, string> = {
-  type: 'EVENT TYPE',
-  sensor: 'SENSOR',
-  region: 'REGION',
+const pad = (v: number) => String(v).padStart(2, '0')
+const toUtcDateTimeLocal = (ms: number): string => {
+  const d = new Date(ms)
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
 }
 
-const eventTypeLabel: Record<EventClassification, string> = {
-  EARTHQUAKE: 'EARTHQUAKE',
-  CONVENTIONAL_EXPLOSION: 'CONVENTIONAL EXPLOSION',
-  NUCLEAR_LIKE: 'NUCLEAR-LIKE EVENT',
-}
+const SELECT_CLS = 'w-full rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-[11px] text-zinc-300 outline-none focus:border-cyan-500/60'
 
-const ruleText = (rule: HistoryFilterRule): string => {
-  const normalizedValue = rule.category === 'type'
-    ? eventTypeLabel[rule.value as EventClassification] ?? rule.value
-    : rule.value.toUpperCase()
-
-  if (rule.mode === 'include') {
-    return `${categoryLabel[rule.category]} IS ${normalizedValue}`
-  }
-
-  return `${categoryLabel[rule.category]} IS NOT ${normalizedValue}`
-}
-
-export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions, onChange }: HistoryFiltersProps) => {
-  const [eventTypeInput, setEventTypeInput] = useState<EventClassification>('EARTHQUAKE')
-  const [sensorInput, setSensorInput] = useState('')
-  const [regionInput, setRegionInput] = useState('')
-
-  const addRule = (category: FilterRuleCategory, mode: FilterRuleMode, rawValue: string) => {
-    const normalized = rawValue.trim()
-    if (!normalized) {
-      return
-    }
-
-    const duplicateExists = value.some(
-      (rule) => rule.category === category && rule.mode === mode && rule.value.toLowerCase() === normalized.toLowerCase(),
-    )
-
-    if (duplicateExists) {
-      return
-    }
-
-    onChange([...value, { category, mode, value: normalized }])
-  }
-
-  const removeRule = (index: number) => {
-    onChange(value.filter((_, ruleIndex) => ruleIndex !== index))
+export const HistoryFiltersPanel = ({
+  filters,
+  availableSensors,
+  availableRegions,
+  timeFilter,
+  anchorMs,
+  loading,
+  onFiltersChange,
+  onTimeFilterChange,
+  onRefresh,
+}: HistoryFiltersProps) => {
+  const applyPreset = (preset: Exclude<HistoryTimePreset, null>, durationMs: number) => {
+    const toMs = anchorMs
+    const fromMs = Math.max(0, toMs - durationMs)
+    onTimeFilterChange({ fromUtc: toUtcDateTimeLocal(fromMs), toUtc: toUtcDateTimeLocal(toMs), preset })
   }
 
   return (
     <aside className="tactical-panel h-fit space-y-4 bg-[#0a0a0a] p-4 font-mono">
-      <h2 className="text-sm uppercase tracking-[0.3em] text-zinc-200">Filters</h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-sm uppercase tracking-[0.3em] text-zinc-200">Filters</h2>
+        <button
+          type="button"
+          className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-500"
+          onClick={onRefresh}
+          disabled={loading}
+        >
+          {loading ? 'Syncing...' : 'Refresh'}
+        </button>
+      </div>
 
-      <label className="block space-y-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
+      <label className="block space-y-1 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
         <span>Event Type</span>
-        <div className="flex gap-1">
-          <select
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
-            value={eventTypeInput}
-            onChange={(event) => setEventTypeInput(event.target.value as EventClassification)}
-          >
-            {EVENT_TYPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
-            onClick={() => addRule('type', 'include', eventTypeInput)}
-          >
-            +
-          </button>
-          <button
-            type="button"
-            className="rounded-sm border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
-            onClick={() => addRule('type', 'exclude', eventTypeInput)}
-          >
-            -
-          </button>
-        </div>
+        <select
+          className={SELECT_CLS}
+          value={filters.type}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onFiltersChange({ ...filters, type: e.target.value as EventClassification | 'ALL' })}
+        >
+          <option value="ALL">All Types</option>
+          <option value="EARTHQUAKE">Earthquake</option>
+          <option value="CONVENTIONAL_EXPLOSION">Conventional Explosion</option>
+          <option value="NUCLEAR_LIKE">Nuclear-like Event</option>
+        </select>
       </label>
 
-      <label className="block space-y-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
+      <label className="block space-y-1 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
         <span>Sensor ID</span>
-        <div className="flex gap-1">
-          <input
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
-            list="sensor-options"
-            value={sensorInput}
-            onChange={(event) => setSensorInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                addRule('sensor', 'include', sensorInput)
-              }
-            }}
-            placeholder="S-01"
-          />
-          <button
-            type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
-            onClick={() => addRule('sensor', 'include', sensorInput)}
-          >
-            +
-          </button>
-          <button
-            type="button"
-            className="rounded-sm border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
-            onClick={() => addRule('sensor', 'exclude', sensorInput)}
-          >
-            -
-          </button>
-        </div>
-        <datalist id="sensor-options">
-          {availableSensors.map((sensor) => (
-            <option key={sensor} value={sensor} />
+        <select
+          className={SELECT_CLS}
+          value={filters.sensorId}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onFiltersChange({ ...filters, sensorId: e.target.value })}
+        >
+          <option value="">All Sensors</option>
+          {availableSensors.map((s) => (
+            <option key={s} value={s}>{s}</option>
           ))}
-        </datalist>
+        </select>
       </label>
 
-      <label className="block space-y-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
+      <label className="block space-y-1 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
         <span>Region</span>
-        <div className="flex gap-1">
-          <input
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
-            list="region-options"
-            value={regionInput}
-            onChange={(event) => setRegionInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                addRule('region', 'include', regionInput)
-              }
-            }}
-            placeholder="NORTH CORRIDOR"
-          />
-          <button
-            type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
-            onClick={() => addRule('region', 'include', regionInput)}
-          >
-            +
-          </button>
-          <button
-            type="button"
-            className="rounded-sm border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
-            onClick={() => addRule('region', 'exclude', regionInput)}
-          >
-            -
-          </button>
-        </div>
-        <datalist id="region-options">
-          {availableRegions.map((region) => (
-            <option key={region} value={region} />
+        <select
+          className={SELECT_CLS}
+          value={filters.region}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onFiltersChange({ ...filters, region: e.target.value })}
+        >
+          <option value="">All Regions</option>
+          {availableRegions.map((r) => (
+            <option key={r} value={r}>{r}</option>
           ))}
-        </datalist>
+        </select>
       </label>
 
-      <section className="space-y-2 border border-zinc-700/80 bg-zinc-950/60 p-2">
-        <h3 className="text-xs uppercase tracking-[0.22em] text-zinc-300">Active Filters</h3>
+      <button
+        type="button"
+        className="w-full rounded-sm border border-zinc-700 bg-zinc-800/50 py-1 text-[10px] uppercase tracking-[0.14em] text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200"
+        onClick={() => onFiltersChange({ type: 'ALL', sensorId: '', region: '' })}
+      >
+        Clear Filters
+      </button>
 
-        {value.length === 0 ? (
-          <p className="text-[11px] uppercase tracking-[0.12em] text-zinc-500">No active rules.</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {value.map((rule, index) => (
-              <div
-                key={`${rule.category}-${rule.mode}-${rule.value}-${index}`}
-                className={
-                  rule.mode === 'include'
-                    ? 'inline-flex items-center gap-2 rounded-sm border border-cyan-400/70 bg-cyan-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-cyan-200 shadow-[0_0_10px_rgba(34,211,238,0.22)]'
-                    : 'inline-flex items-center gap-2 rounded-sm border border-rose-500/80 bg-rose-600/10 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-rose-200 shadow-[0_0_10px_rgba(225,29,72,0.2)]'
-                }
-              >
-                <span className={rule.mode === 'exclude' ? 'line-through decoration-rose-300/70' : ''}>{ruleText(rule)}</span>
-                <button
-                  type="button"
-                  className="rounded-sm border border-current px-1 leading-none text-[10px]"
-                  onClick={() => removeRule(index)}
-                  aria-label={`Remove ${ruleText(rule)}`}
-                >
-                  X
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-        Keyboard: Enter adds include rule for sensor/region fields.
-      </p>
+      <div className="border-t border-zinc-700/60 pt-4 space-y-2">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-400">Time Range (UTC)</p>
+        <div className="flex flex-wrap gap-1">
+          {PRESETS.map((preset) => (
+            <button
+              key={preset.value}
+              type="button"
+              className={
+                timeFilter.preset === preset.value
+                  ? 'rounded-sm border border-cyan-400/80 bg-cyan-500/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-200'
+                  : 'rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-zinc-400 transition hover:border-cyan-400/50 hover:text-cyan-300'
+              }
+              onClick={() => applyPreset(preset.value, preset.durationMs)}
+            >
+              {preset.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200"
+            onClick={() => onTimeFilterChange({ fromUtc: '', toUtc: '', preset: null })}
+          >
+            Reset
+          </button>
+        </div>
+        <label className="block space-y-1 text-[10px] uppercase tracking-[0.14em] text-zinc-400">
+          <span>From</span>
+          <input
+            type="datetime-local"
+            className="w-full rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300 outline-none focus:border-cyan-500/60"
+            value={timeFilter.fromUtc}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onTimeFilterChange({ ...timeFilter, fromUtc: e.target.value, preset: null })}
+          />
+        </label>
+        <label className="block space-y-1 text-[10px] uppercase tracking-[0.14em] text-zinc-400">
+          <span>To</span>
+          <input
+            type="datetime-local"
+            className="w-full rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300 outline-none focus:border-cyan-500/60"
+            value={timeFilter.toUtc}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onTimeFilterChange({ ...timeFilter, toUtc: e.target.value, preset: null })}
+          />
+        </label>
+      </div>
     </aside>
   )
 }

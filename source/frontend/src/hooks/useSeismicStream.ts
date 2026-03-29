@@ -95,12 +95,16 @@ const normalizePayload = (payload: RawStreamPayload): SeismicEvent => {
 }
 
 const normalizeHistoryPayload = (payload: RawHistoryPayload): SeismicEvent => {
+  const raw = payload.classification as string | undefined
+  const classification =
+    (raw === 'NUCLEAR_EVENT' ? 'NUCLEAR_LIKE' : raw as SeismicEvent['classification']) ??
+    classifyByFrequency(payload.frequency)
   return {
     event_id: payload.event_id,
     sensor_id: payload.sensor_id,
     timestamp: payload.timestamp,
     frequency: payload.frequency,
-    classification: payload.classification ?? classifyByFrequency(payload.frequency),
+    classification,
     amplitude: payload.amplitude,
     sensor: payload.sensor,
   }

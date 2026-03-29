@@ -5,6 +5,7 @@ import type {
   HistoryQueryOptions,
   SeismicEvent,
 } from '../types/seismic'
+import type { IncidentCluster } from '../utils/incidents'
 import { classifyByFrequency } from '../utils/classification'
 
 const HISTORY_ENDPOINT = import.meta.env.VITE_HISTORY_API_URL as string | undefined
@@ -26,10 +27,18 @@ interface HistoryApiPayload {
   offset?: number
 }
 
+const normalizeClassification = (raw: string | undefined | null): import('../types/seismic').EventClassification | undefined => {
+  if (!raw) return undefined
+  if (raw === 'NUCLEAR_EVENT') return 'NUCLEAR_LIKE'
+  return raw as import('../types/seismic').EventClassification
+}
+
 const normalizeEvents = (events: SeismicEvent[]): SeismicEvent[] => {
   return events.map((event) => ({
     ...event,
-    classification: event.classification ?? classifyByFrequency(event.frequency),
+    classification:
+      normalizeClassification(event.classification as unknown as string) ??
+      classifyByFrequency(event.frequency),
   }))
 }
 
@@ -82,4 +91,77 @@ export const fetchHistoryEvents = async (
     limit: payload.limit ?? Math.max(1, options.limit ?? normalized.length),
     pagingMode: 'server',
   }
+}
+
+interface BackendIncidentCluster {
+  id: string
+  region: string
+  severity: string
+  from: string
+  to: string
+  count: number
+  peak_frequency: number
+  confirmed_count: number
+  events: SeismicEvent[]
+}
+
+export const fetchIncidentClusters = async (
+  windowMinutes: number = 10,
+  from?: string,
+  to?: string,
+): Promise<IncidentCluster[]> => {
+  if (!HISTORY_ENDPOINT) {
+    throw new Error('History endpoint is not configured. Set VITE_HISTORY_API_URL.')
+  }
+
+  const params = new URLSearchParams()
+  params.set('windowMinutes', String(windowMinutes))
+  if (from) params.set('from', from)
+  if (to) params.set('to', to)
+
+  const base = HISTORY_ENDPOINT.replace(/\/events\/?$/, '/events/incidents')
+  const response = await fetch(`${base}?${params.toString()}`)
+  if (!response.ok) {
+    throw new Error(`Incident cluster request failed with status ${response.status}.`)
+  }
+
+  const payload = (await response.json()) as BackendIncidentCluster[]
+
+  return payload.map((cluster) => ({
+    id: cluster.id,
+    region: cluster.region,
+    severity: mapBackendSeverity(cluster.severity),
+    from: cluster.from,
+    to: cluster.to,
+    count: cluster.count,
+    peakFrequency: cluster.peak_frequency,
+    confirmedCount: cluster.confirmed_count,
+    events: normalizeEvents(cluster.events),
+  }))
+}
+
+const mapBackendSeverity = (severity: string): import('../types/seismic').EventClassification => {
+  if (severity === 'NUCLEAR_EVENT') return 'NUCLEAR_LIKE'
+  if (severity === 'CONVENTIONAL_EXPLOSION') return 'CONVENTIONAL_EXPLOSION'
+  return 'EARTHQUAKE'
+}
+
+export interface EventCorroboration {
+  event_id: string
+  classification: string
+  region: string
+  confirmed: boolean
+  reporter_count: number
+  replica_ids: string[]
+  detected_ats: string[]
+}
+
+export const fetchEventCorroboration = async (eventId: string): Promise<EventCorroboration | null> => {
+  if (!HISTORY_ENDPOINT) return null
+
+  const base = HISTORY_ENDPOINT.replace(/\/events\/?$/, `/events/corroboration/${encodeURIComponent(eventId)}`)
+  const response = await fetch(base)
+  if (response.status === 404) return null
+  if (!response.ok) throw new Error(`Corroboration request failed with status ${response.status}.`)
+  return (await response.json()) as EventCorroboration
 }

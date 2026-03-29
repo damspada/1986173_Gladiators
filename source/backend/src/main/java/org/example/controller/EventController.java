@@ -2,12 +2,14 @@ package org.example.controller;
 
 import org.example.dto.CorroborationDto;
 import org.example.dto.HistoryPageDto;
+import org.example.dto.IncidentClusterDto;
 import org.example.dto.SeismicEventDto;
 import org.example.model.Classification;
 import org.example.service.EventService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -60,6 +62,30 @@ public class EventController {
     @GetMapping("/events/corroboration")
     public List<CorroborationDto> getCorroboration() {
         return eventService.findCorroboration();
+    }
+
+    /**
+     * Corroboration detail for a single event: which replicas reported it,
+     * their detection timestamps, and whether majority confirmation was reached.
+     */
+    @GetMapping("/events/corroboration/{eventId}")
+    public ResponseEntity<CorroborationDto> getCorroborationById(@PathVariable String eventId) {
+        CorroborationDto result = eventService.findCorroborationById(eventId);
+        return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
+    }
+
+    /**
+     * Groups events into incident clusters by region within a configurable time window.
+     * @param windowMinutes minutes within which consecutive events in the same region
+     *                      are grouped (default 10).
+     */
+    @GetMapping("/events/incidents")
+    public List<IncidentClusterDto> getIncidentClusters(
+            @RequestParam(defaultValue = "10") int windowMinutes,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+        return eventService.findIncidentClusters(
+                Math.max(1, Math.min(windowMinutes, 1440)), from, to);
     }
 }
 

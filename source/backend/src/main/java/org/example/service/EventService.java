@@ -2,6 +2,7 @@ package org.example.service;
 
 import org.example.dto.CorroborationDto;
 import org.example.dto.HistoryPageDto;
+import org.example.dto.IncidentClusterDto;
 import org.example.dto.SeismicEventDto;
 import org.example.model.Classification;
 import org.example.model.Event;
@@ -11,7 +12,10 @@ import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -97,6 +101,140 @@ public class EventService {
                 .all()
                 .stream()
                 .toList();
+    }
+
+    /**
+     * Returns corroboration data for a single event by its ID.
+     * Includes which replicas reported it, their detection timestamps, and confirmation status.
+     */
+    @Transactional(readOnly = true)
+    public CorroborationDto findCorroborationById(String eventId) {
+        String cypher = """
+                MATCH (e:SeismicEvent {eventId: $eventId})
+                OPTIONAL MATCH (rep:Replica)-[r:REPORTED]->(e)
+                WITH e, collect({replicaId: rep.replicaId, detectedAt: r.detectedAt}) AS reporters
+                RETURN e.eventId        AS eventId,
+                       e.classification AS classification,
+                       e.region         AS region,
+                       e.confirmed      AS confirmed,
+                       size(reporters)  AS reporterCount,
+                       [x IN reporters | x.replicaId]  AS replicaIds,
+                       [x IN reporters | toString(x.detectedAt)] AS detectedAts
+                """;
+
+        return neo4jClient.query(cypher)
+                .bindAll(java.util.Map.of("eventId", eventId))
+                .fetchAs(CorroborationDto.class)
+                .mappedBy((typeSystem, record) -> new CorroborationDto(
+                        record.get("eventId").asString(null),
+                        record.get("classification").asString(null),
+                        record.get("region").asString(null),
+                        record.get("confirmed").asBoolean(false),
+                        record.get("reporterCount").asInt(0),
+                        record.get("replicaIds").asList(v -> v.asString()),
+                        record.get("detectedAts").asList(v -> v.asString())
+                ))
+                .one()
+                .orElse(null);
+    }
+
+    /**
+     * Groups events into incident clusters: events in the same region within
+     * {@code windowMinutes} of each other belong to the same cluster.
+     * Performed via a single Cypher query that returns events ordered by region
+     * and timestamp, then clustered in Java.
+     */
+    @Transactional(readOnly = true)
+    public List<IncidentClusterDto> findIncidentClusters(int windowMinutes,
+                                                          Instant from, Instant to) {
+        String classification = null;
+        List<Event> events = (from != null || to != null)
+                ? eventRepository.findByFilters(classification, null, null, from, to)
+                : eventRepository.findByFilters(classification, null, null, null, null);
+
+        // Sort by region, then by timestamp
+        events.sort((a, b) -> {
+            int regionCmp = safeRegion(a).compareTo(safeRegion(b));
+            if (regionCmp != 0) return regionCmp;
+            return a.getTimestamp().compareTo(b.getTimestamp());
+        });
+
+        Duration window = Duration.ofMinutes(windowMinutes);
+        List<IncidentClusterDto> clusters = new ArrayList<>();
+        List<Event> currentGroup = new ArrayList<>();
+        String currentRegion = null;
+
+        for (Event event : events) {
+            String region = safeRegion(event);
+            if (currentRegion == null) {
+                currentRegion = region;
+                currentGroup.add(event);
+                continue;
+            }
+
+            Event last = currentGroup.get(currentGroup.size() - 1);
+            boolean sameRegion = region.equals(currentRegion);
+            boolean withinWindow = sameRegion &&
+                    Duration.between(last.getTimestamp(), event.getTimestamp()).abs()
+                            .compareTo(window) <= 0;
+
+            if (sameRegion && withinWindow) {
+                currentGroup.add(event);
+            } else {
+                clusters.add(buildCluster(currentGroup, currentRegion));
+                currentGroup = new ArrayList<>();
+                currentGroup.add(event);
+                currentRegion = region;
+            }
+        }
+
+        if (!currentGroup.isEmpty()) {
+            clusters.add(buildCluster(currentGroup, currentRegion));
+        }
+
+        // Sort clusters newest-first
+        clusters.sort((a, b) -> b.toTimestamp().compareTo(a.toTimestamp()));
+        return clusters;
+    }
+
+    private static String safeRegion(Event e) {
+        return e.getRegion() != null ? e.getRegion() : "UNKNOWN";
+    }
+
+    private static IncidentClusterDto buildCluster(List<Event> group, String region) {
+        Event first = group.get(0);
+        Event last = group.get(group.size() - 1);
+
+        // Severity = highest classification in the group
+        Classification severity = group.stream()
+                .map(Event::getClassification)
+                .max((a, b) -> Integer.compare(a.ordinal(), b.ordinal()))
+                .orElse(Classification.EARTHQUAKE);
+
+        double peakFreq = group.stream()
+                .mapToDouble(Event::getFrequency)
+                .max()
+                .orElse(0.0);
+
+        int confirmedCount = (int) group.stream().filter(Event::isConfirmed).count();
+
+        String id = region + "-" + first.getTimestamp().toInstant().toString();
+
+        List<SeismicEventDto> eventDtos = group.stream()
+                .map(SeismicEventDto::forHistory)
+                .toList();
+
+        return new IncidentClusterDto(
+                id,
+                region,
+                severity.name(),
+                first.getTimestamp().toInstant().toString(),
+                last.getTimestamp().toInstant().toString(),
+                group.size(),
+                peakFreq,
+                confirmedCount,
+                eventDtos
+        );
     }
 
     // ── Write ────────────────────────────────────────────────────────────────
