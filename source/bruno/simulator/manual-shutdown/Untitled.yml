@@ -8,6 +8,11 @@ http:
   url: http://localhost:{{simulator_port}}/api/admin/shutdown
   auth: inherit
 
+runtime:
+  variables:
+    - name: simulator_port
+      value: "9090"
+
 settings:
   encodeUrl: true
   timeout: 0

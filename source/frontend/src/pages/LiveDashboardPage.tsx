@@ -37,6 +37,7 @@ export const LiveDashboardPage = ({
   const incidentClusters = useMemo(() => groupEventsByIncident(events, 4 * 60 * 1000), [events])
   const healthyReplicas = infrastructure?.replicas.filter((item) => item.status === 'healthy').length ?? 0
   const totalReplicas = infrastructure?.replicas.length ?? 0
+  const downReplicas = infrastructure?.replicas.filter((item) => item.status === 'down') ?? []
   const latestIncident = incidentClusters[0] ?? null
   const infrastructureHealthLabel = totalReplicas > 0 && healthyReplicas === totalReplicas
     ? 'Nominal'
@@ -71,6 +72,21 @@ export const LiveDashboardPage = ({
         </div>
       </section>
 
+      {infrastructureHealthLabel !== 'Nominal' && (
+        <section className="rounded-sm border border-rose-500/70 bg-rose-900/20 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-rose-400 animate-pulse"></div>
+            <p className="text-sm font-medium text-rose-200">Infrastructure Alert</p>
+          </div>
+          <p className="mt-1 text-xs text-rose-300">
+            {infrastructureHealthLabel === 'Degraded'
+              ? `${downReplicas.length} replica(s) are down: ${downReplicas.map(r => r.id).join(', ')}`
+              : 'All replicas are unavailable.'
+            }
+          </p>
+        </section>
+      )}
+
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-4">
           <SensorGridMap sensors={sensors} latestEvents={events} onSelectSensor={onOpenSensor} />
@@ -102,6 +118,52 @@ export const LiveDashboardPage = ({
                   {message}
                 </p>
               ))}
+            </div>
+            <div className="mt-3">
+              <button
+                onClick={() => {
+                  const memUsage = (globalThis as any).process?.memoryUsage?.() || {};
+                  const cpuUsage = (globalThis as any).process?.cpuUsage?.() || {};
+                  const metrics = {
+                    timestamp: new Date().toISOString(),
+                    sessionUptimeMs: missionMetrics.uptimeMs,
+                    totalReconnects: missionMetrics.reconnectCount,
+                    maxDisconnectMs: missionMetrics.maxDisconnectMs,
+                    estimatedLostEvents: missionMetrics.estimatedLostEvents,
+                    infrastructureHealth: infrastructureHealthLabel,
+                    gatewayStatus: infrastructure?.gateway ?? 'unknown',
+                    totalReplicas,
+                    healthyReplicas,
+                    activeReplica: infrastructure?.activeReplica ?? 'n/a',
+                    lastFailoverAt: infrastructure?.lastFailoverAt ?? 'not recorded',
+                    replicas: infrastructure?.replicas.map(r => ({ id: r.id, status: r.status, lagMs: r.lagMs })) ?? [],
+                    systemMetrics: {
+                      memoryUsageMB: {
+                        rss: Math.round(memUsage.rss / 1024 / 1024),
+                        heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+                        heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+                        external: Math.round(memUsage.external / 1024 / 1024)
+                      },
+                      cpuUsage: {
+                        user: cpuUsage.user,
+                        system: cpuUsage.system
+                      }
+                    }
+                  };
+                  const blob = new Blob([JSON.stringify(metrics, null, 2)], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `infrastructure-metrics-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+                className="w-full rounded-sm border border-zinc-600 bg-zinc-800 px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-zinc-200 hover:bg-zinc-700"
+              >
+                Export Metrics
+              </button>
             </div>
           </section>
 
