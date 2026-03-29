@@ -3,6 +3,8 @@ package org.example.service;
 import org.example.dto.SimulatorEventDto;
 import org.example.model.Classification;
 import org.example.model.Event;
+import org.example.model.Region;
+import org.example.model.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +14,7 @@ import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.time.ZoneOffset;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -55,14 +58,15 @@ public class EventIngestionService {
         try {
             return new Event(
                     dto.eventId(),
-                    dto.sensorId(),
-                    Instant.parse(dto.timestamp()),
+                    Instant.parse(dto.timestamp()).atOffset(ZoneOffset.UTC).toZonedDateTime(),
                     dto.frequency(),
-                    dto.amplitude(),
                     Classification.fromFrequency(dto.frequency()),
                     dto.lat(),
                     dto.lon(),
-                    dto.region()
+                    dto.sensorId(),
+                    dto.region(),
+                    new Sensor(dto.sensorId()),
+                    new Region(dto.region())
             );
         } catch (Exception e) {
             log.warn("Skipping malformed simulator event {}: {}", dto.eventId(), e.getMessage());

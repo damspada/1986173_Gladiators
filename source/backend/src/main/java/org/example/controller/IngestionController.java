@@ -3,6 +3,8 @@ package org.example.controller;
 import org.example.dto.ReplicaEventDto;
 import org.example.model.Classification;
 import org.example.model.Event;
+import org.example.model.Region;
+import org.example.model.Sensor;
 import org.example.service.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 
 @RestController
@@ -34,14 +37,15 @@ public class IngestionController {
             Instant ts = parseTimestamp(dto.timestamp());
             Event event = new Event(
                     dto.eventId(),
-                    dto.sensorId(),
-                    ts,
+                    ts.atOffset(ZoneOffset.UTC).toZonedDateTime(),
                     dto.frequency(),
-                    0.0,
                     Classification.valueOf(dto.type()),
                     dto.lat(),
                     dto.lon(),
-                    dto.region()
+                    dto.sensorId(),
+                    dto.region(),
+                    new Sensor(dto.sensorId()),
+                    new Region(dto.region())
             );
             eventService.save(event);
             return ResponseEntity.ok().build();

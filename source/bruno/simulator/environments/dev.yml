@@ -1,6 +1,4 @@
 name: dev
 variables:
-  - name: backend_port
-    value: "8081"
   - name: simulator_port
     value: "9090"

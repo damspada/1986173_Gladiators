@@ -1,0 +1,29 @@
+info:
+  name: Ingest Event (replica POST)
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: http://localhost:{{backend_port}}/api/events
+  body:
+    type: json
+    data: |-
+      {
+        "event_id": "cd0cf6218cab457356bf13e809b2d1ed",
+        "sensor_id": "sensor-08",
+        "type": "CONVENTIONAL_EXPLOSION",
+        "frequency": 6.2,
+        "timestamp": "2026-03-29T12:00:00Z",
+        "window_size_sec": 10,
+        "lat": 68.5,
+        "long": 27.3,
+        "region": "Borealis Ridge"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

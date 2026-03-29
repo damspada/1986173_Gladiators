@@ -51,6 +51,10 @@ ON CREATE SET
     event.timestamp      = datetime($timestamp),
     event.frequency      = $frequency,
     event.classification = $classification,
+    event.sensorId       = $sensor_id,
+    event.region         = $region,
+    event.lat            = $lat,
+    event.lon            = $lon,
     event.location       = point({latitude: $lat, longitude: $lon})
 
 // Add classification as an extra label so Neo4j Browser can assign a distinct

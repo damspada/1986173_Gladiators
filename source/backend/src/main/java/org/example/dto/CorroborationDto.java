@@ -1,0 +1,18 @@
+package org.example.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
+
+/**
+ * Summarises how many replicas independently reported a seismic event
+ * and whether the event reached the majority-confirmation threshold.
+ */
+public record CorroborationDto(
+        @JsonProperty("event_id")      String eventId,
+        String classification,
+        String region,
+        boolean confirmed,
+        @JsonProperty("reporter_count") int reporterCount,
+        @JsonProperty("replica_ids")   List<String> replicaIds
+) {}

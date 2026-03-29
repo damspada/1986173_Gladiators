@@ -8,15 +8,11 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface EventRepository extends Neo4jRepository<Event, String> {
 
-    Optional<Event> findByEventId(String eventId);
-
-    boolean existsBySensorIdAndTimestampAndFrequency(String sensorId, Instant timestamp, double frequency);
-
+    // ── Scalar-property filter query (fast path, no relationship traversal needed) ─
     @Query("""
             MATCH (e:SeismicEvent)
             WHERE ($classification IS NULL OR e.classification = $classification)
@@ -33,4 +29,23 @@ public interface EventRepository extends Neo4jRepository<Event, String> {
             @Param("from") Instant from,
             @Param("to") Instant to
     );
+
+    // ── Confirmed events (majority of replicas agreed) ───────────────────────
+    @Query("""
+            MATCH (e:SeismicEvent)
+            WHERE e.confirmed = true
+            RETURN e ORDER BY e.timestamp DESC
+            """)
+    List<Event> findAllConfirmed();
+
+    // ── Events that have been reported by at least minReporters replicas ─────
+    @Query("""
+            MATCH (e:SeismicEvent)
+            MATCH (rep:Replica)-[:REPORTED]->(e)
+            WITH e, count(rep) AS reporters
+            WHERE reporters >= $minReporters
+            RETURN e ORDER BY reporters DESC, e.timestamp DESC
+            """)
+    List<Event> findCorroborated(@Param("minReporters") int minReporters);
 }
+

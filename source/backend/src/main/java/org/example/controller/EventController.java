@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.dto.CorroborationDto;
 import org.example.dto.SeismicEventDto;
 import org.example.model.Classification;
 import org.example.service.EventService;
@@ -22,6 +23,7 @@ public class EventController {
         this.eventService = eventService;
     }
 
+    /** All events, optionally filtered by classification, sensor, region, and time range. */
     @GetMapping("/events")
     public List<SeismicEventDto> getHistory(
             @RequestParam(required = false) Classification type,
@@ -31,4 +33,20 @@ public class EventController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
         return eventService.findByFilters(type, sensorId, region, from, to);
     }
+
+    /** Only events that reached the majority-replica confirmation threshold. */
+    @GetMapping("/events/confirmed")
+    public List<SeismicEventDto> getConfirmedEvents() {
+        return eventService.findConfirmedEvents();
+    }
+
+    /**
+     * Corroboration summary: for every event shows how many replicas reported it
+     * and which replica IDs they were.
+     */
+    @GetMapping("/events/corroboration")
+    public List<CorroborationDto> getCorroboration() {
+        return eventService.findCorroboration();
+    }
 }
+

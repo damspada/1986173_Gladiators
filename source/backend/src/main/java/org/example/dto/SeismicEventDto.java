@@ -11,8 +11,8 @@ public record SeismicEventDto(
         @JsonProperty("sensor_id")  String sensorId,
         String timestamp,
         double frequency,
-        double amplitude,
         Classification classification,
+        boolean confirmed,
         double lat,
         @JsonProperty("long") double lon,
         String region,
@@ -20,20 +20,33 @@ public record SeismicEventDto(
 ) {
     public static SeismicEventDto forRealtime(Event e) {
         return new SeismicEventDto(
-                e.getEventId(), e.getSensorId(), e.getTimestamp().toString(),
-                e.getFrequency(), e.getAmplitude(), e.getClassification(),
-                e.getLat(), e.getLon(), e.getRegion(),
+                e.getEventId(),
+                e.getSensorId(),
+                e.getTimestamp() != null ? e.getTimestamp().toInstant().toString() : null,
+                e.getFrequency(),
+                e.getClassification(),
+                e.isConfirmed(),
+                e.getLat(),
+                e.getLon(),
+                e.getRegion(),
                 null
         );
     }
 
     public static SeismicEventDto forHistory(Event e) {
         return new SeismicEventDto(
-                e.getEventId(), e.getSensorId(), e.getTimestamp().toString(),
-                e.getFrequency(), e.getAmplitude(), e.getClassification(),
-                e.getLat(), e.getLon(), e.getRegion(),
+                e.getEventId(),
+                e.getSensorId(),
+                e.getTimestamp() != null ? e.getTimestamp().toInstant().toString() : null,
+                e.getFrequency(),
+                e.getClassification(),
+                e.isConfirmed(),
+                e.getLat(),
+                e.getLon(),
+                e.getRegion(),
                 new SensorMetaDto(e.getSensorId(), e.getLat(), e.getLon(), e.getRegion())
         );
     }
 }
+
 
