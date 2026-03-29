@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:8080/api/admin/shutdown
+  url: http://localhost:{{simulator_port}}/api/admin/shutdown
   auth: inherit
 
 settings:
