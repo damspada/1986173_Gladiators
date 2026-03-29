@@ -1,20 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 :root {
-  --bg-main: #0a0a0a;
-  --bg-elev: #111315;
-  --line: rgba(115, 122, 128, 0.42);
-  --line-strong: rgba(156, 163, 175, 0.6);
-  --txt-main: #f1f5f9;
-  --txt-muted: #9ca3af;
-  --earthquake: #22d3ee;
-  --explosion: #f59e0b;
-  --nuclear: #e11d48;
+  --bg-main: #061016;
+  --bg-elev: #0b1a22;
+  --line: rgba(144, 187, 202, 0.24);
+  --line-strong: rgba(160, 208, 225, 0.45);
+  --txt-main: #eef9ff;
+  --txt-muted: #9cb7c4;
+  --earthquake: #4ac7e9;
+  --explosion: #59b2df;
+  --nuclear: #7e9ce6;
+  --action: #1ee6ff;
+  --surface-1: rgba(11, 26, 34, 0.68);
+  --surface-2: rgba(16, 35, 46, 0.75);
+  --surface-3: rgba(20, 44, 58, 0.78);
+  --radius-lg: 18px;
+  --radius-xl: 28px;
+  --shadow-environment: 0 20px 60px rgba(2, 8, 12, 0.4), 0 8px 22px rgba(3, 14, 20, 0.3);
+  --shadow-float: 0 28px 72px rgba(2, 8, 12, 0.52), 0 10px 28px rgba(30, 230, 255, 0.12);
 }
 
 @theme {
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 * {
@@ -29,10 +38,13 @@ body,
 
 body {
   margin: 0;
-  background: var(--bg-main);
+  background:
+    radial-gradient(circle at var(--mouse-x, 18%) var(--mouse-y, 4%), rgba(30, 230, 255, 0.18), transparent 36%),
+    radial-gradient(circle at 85% 16%, rgba(96, 165, 250, 0.11), transparent 34%),
+    linear-gradient(165deg, #051016 0%, #091923 46%, #06141d 100%);
   color: var(--txt-main);
-  font-family: var(--font-mono);
-  letter-spacing: 0.02em;
+  font-family: var(--font-sans);
+  letter-spacing: 0.015em;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -40,27 +52,61 @@ body {
 
 .tactical-panel {
   border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
   background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 35%),
-    linear-gradient(0deg, rgba(10, 10, 10, 0.88), rgba(10, 10, 10, 0.88)),
-    var(--bg-elev);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01) 34%, transparent 72%),
+    linear-gradient(178deg, var(--surface-2), var(--surface-1));
+  backdrop-filter: blur(12px) saturate(115%);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.015),
-    0 18px 30px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(170, 225, 245, 0.03),
+    var(--shadow-environment);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 260ms ease, border-color 220ms ease;
+}
+
+.tactical-panel:hover {
+  border-color: var(--line-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(170, 225, 245, 0.04),
+    var(--shadow-float);
 }
 
 @keyframes sensorPulse {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
+    box-shadow: 0 0 0 0 rgba(30, 230, 255, 0.55);
   }
   70% {
     transform: scale(1.45);
-    box-shadow: 0 0 0 14px rgba(34, 211, 238, 0);
+    box-shadow: 0 0 0 16px rgba(30, 230, 255, 0);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0);
+    box-shadow: 0 0 0 0 rgba(30, 230, 255, 0);
+  }
+}
+
+@keyframes moduleReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gradientDrift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 
@@ -68,25 +114,58 @@ body {
   animation: sensorPulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+.module-reveal {
+  animation: moduleReveal 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.liquid-hover {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 240ms ease, border-color 220ms ease, background-color 200ms ease;
+}
+
+.liquid-hover:hover {
+  transform: translateY(-2px) scale(1.01);
+}
+
+.kicker-label {
+  font-size: 10px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: rgba(199, 233, 247, 0.84);
+}
+
+.display-heading {
+  font-size: clamp(2rem, 4.5vw, 4.2rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.micro-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(168, 201, 216, 0.86);
+}
+
 .sensor-world-map {
-  background: #090b0d;
+  background: #07131a;
 }
 
 .sensor-world-map .leaflet-control-zoom a {
-  background: #101317;
-  color: #d1d5db;
-  border-color: rgba(115, 122, 128, 0.42);
+  background: rgba(11, 27, 36, 0.92);
+  color: #d7ecf5;
+  border-color: rgba(144, 187, 202, 0.42);
 }
 
 .sensor-world-map .leaflet-control-attribution {
-  background: rgba(10, 10, 10, 0.7);
-  color: #9ca3af;
+  background: rgba(6, 17, 24, 0.74);
+  color: #99b7c6;
   font-family: var(--font-mono);
   font-size: 10px;
 }
 
 .sensor-world-map .leaflet-tile {
-  filter: brightness(0.45) contrast(1.25) saturate(0.75) hue-rotate(175deg);
+  filter: brightness(0.54) contrast(1.18) saturate(0.78) hue-rotate(182deg);
 }
 
 .sensor-marker-wrapper {
@@ -100,8 +179,8 @@ body {
   width: 14px;
   height: 14px;
   border-radius: 9999px;
-  border: 2px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 0 14px rgba(34, 211, 238, 0.8);
+  border: 2px solid rgba(226, 242, 249, 0.82);
+  box-shadow: 0 0 14px rgba(74, 199, 233, 0.65);
 }
 
 .sensor-marker.eq {
@@ -112,13 +191,13 @@ body {
 .sensor-marker.exp {
   background: var(--explosion);
   color: var(--explosion);
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.85);
+  box-shadow: 0 0 14px rgba(89, 178, 223, 0.72);
 }
 
 .sensor-marker.nuc {
   background: var(--nuclear);
   color: var(--nuclear);
-  box-shadow: 0 0 15px rgba(225, 29, 72, 0.9);
+  box-shadow: 0 0 15px rgba(126, 156, 230, 0.78);
 }
 
 .sensor-marker.is-hot::after {
@@ -132,19 +211,23 @@ body {
 }
 
 .sensor-map-tooltip {
-  background: rgba(10, 12, 14, 0.95);
-  color: #f3f4f6;
-  border: 1px solid rgba(115, 122, 128, 0.62);
-  border-radius: 4px;
-  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.45);
+  background: rgba(7, 21, 30, 0.95);
+  color: #e9f8ff;
+  border: 1px solid rgba(144, 187, 202, 0.5);
+  border-radius: 12px;
+  box-shadow: 0 16px 28px rgba(2, 10, 16, 0.5);
 }
 
 .sensor-map-tooltip::before {
-  border-top-color: rgba(115, 122, 128, 0.62) !important;
+  border-top-color: rgba(144, 187, 202, 0.5) !important;
 }
 
 @media (max-width: 900px) {
   body {
     font-size: 14px;
+  }
+
+  .display-heading {
+    font-size: clamp(1.7rem, 10vw, 2.5rem);
   }
 }

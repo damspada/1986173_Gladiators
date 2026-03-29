@@ -65,14 +65,14 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
   }
 
   return (
-    <aside className="tactical-panel h-fit space-y-4 bg-[#0a0a0a] p-4 font-mono">
-      <h2 className="text-sm uppercase tracking-[0.3em] text-zinc-200">Filters</h2>
+    <aside className="tactical-panel module-reveal h-fit space-y-5 p-5">
+      <h2 className="text-sm uppercase tracking-[0.32em] text-zinc-200">Filters</h2>
 
-      <label className="block space-y-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
+      <label className="block space-y-1.5 text-xs uppercase tracking-[0.18em] text-zinc-400">
         <span>Event Type</span>
         <div className="flex gap-1">
           <select
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
+            className="min-w-0 flex-1 rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-2 text-xs uppercase tracking-[0.1em] text-zinc-100"
             value={eventTypeInput}
             onChange={(event) => setEventTypeInput(event.target.value as EventClassification)}
           >
@@ -84,14 +84,14 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
           </select>
           <button
             type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
+            className="liquid-hover rounded-xl border border-cyan-200/45 bg-cyan-300/15 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-100 transition hover:bg-cyan-300/25"
             onClick={() => addRule('type', 'include', eventTypeInput)}
           >
             +
           </button>
           <button
             type="button"
-            className="rounded-sm border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
+            className="liquid-hover rounded-xl border border-rose-300/45 bg-rose-400/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-400/18"
             onClick={() => addRule('type', 'exclude', eventTypeInput)}
           >
             -
@@ -99,11 +99,11 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
         </div>
       </label>
 
-      <label className="block space-y-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
+      <label className="block space-y-1.5 text-xs uppercase tracking-[0.18em] text-zinc-400">
         <span>Sensor ID</span>
         <div className="flex gap-1">
           <input
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
+            className="min-w-0 flex-1 rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-2 text-xs uppercase tracking-[0.1em] text-zinc-100"
             list="sensor-options"
             value={sensorInput}
             onChange={(event) => setSensorInput(event.target.value)}
@@ -111,14 +111,14 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
           />
           <button
             type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
+            className="liquid-hover rounded-xl border border-cyan-200/45 bg-cyan-300/15 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-100 transition hover:bg-cyan-300/25"
             onClick={() => addRule('sensor', 'include', sensorInput)}
           >
             +
           </button>
           <button
             type="button"
-            className="rounded-sm border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
+            className="liquid-hover rounded-xl border border-rose-300/45 bg-rose-400/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-400/18"
             onClick={() => addRule('sensor', 'exclude', sensorInput)}
           >
             -
@@ -131,11 +131,11 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
         </datalist>
       </label>
 
-      <label className="block space-y-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
+      <label className="block space-y-1.5 text-xs uppercase tracking-[0.18em] text-zinc-400">
         <span>Region</span>
         <div className="flex gap-1">
           <input
-            className="min-w-0 flex-1 rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs uppercase tracking-[0.08em] text-zinc-100"
+            className="min-w-0 flex-1 rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-2 text-xs uppercase tracking-[0.1em] text-zinc-100"
             list="region-options"
             value={regionInput}
             onChange={(event) => setRegionInput(event.target.value)}
@@ -143,14 +143,14 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
           />
           <button
             type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
+            className="liquid-hover rounded-xl border border-cyan-200/45 bg-cyan-300/15 px-2 text-[10px] uppercase tracking-[0.14em] text-cyan-100 transition hover:bg-cyan-300/25"
             onClick={() => addRule('region', 'include', regionInput)}
           >
             +
           </button>
           <button
             type="button"
-            className="rounded-sm border border-rose-500/70 bg-rose-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-300 transition hover:bg-rose-500/20"
+            className="liquid-hover rounded-xl border border-rose-300/45 bg-rose-400/10 px-2 text-[10px] uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-400/18"
             onClick={() => addRule('region', 'exclude', regionInput)}
           >
             -
@@ -163,7 +163,7 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
         </datalist>
       </label>
 
-      <section className="space-y-2 border border-zinc-700/80 bg-zinc-950/60 p-2">
+      <section className="space-y-2 rounded-2xl border border-slate-200/15 bg-slate-950/25 p-3">
         <h3 className="text-xs uppercase tracking-[0.22em] text-zinc-300">Active Filters</h3>
 
         {value.length === 0 ? (
@@ -175,14 +175,14 @@ export const HistoryFiltersPanel = ({ value, availableSensors, availableRegions,
                 key={`${rule.category}-${rule.mode}-${rule.value}-${index}`}
                 className={
                   rule.mode === 'include'
-                    ? 'inline-flex items-center gap-2 rounded-sm border border-cyan-400/70 bg-cyan-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-cyan-200 shadow-[0_0_10px_rgba(34,211,238,0.22)]'
-                    : 'inline-flex items-center gap-2 rounded-sm border border-rose-500/80 bg-rose-600/10 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-rose-200 shadow-[0_0_10px_rgba(225,29,72,0.2)]'
+                    ? 'inline-flex items-center gap-2 rounded-xl border border-cyan-200/45 bg-cyan-300/15 px-2 py-1 text-[10px] uppercase tracking-[0.1em] text-cyan-100 shadow-[0_10px_18px_rgba(30,230,255,0.14)]'
+                    : 'inline-flex items-center gap-2 rounded-xl border border-rose-300/45 bg-rose-400/12 px-2 py-1 text-[10px] uppercase tracking-[0.1em] text-rose-100 shadow-[0_10px_18px_rgba(251,113,133,0.12)]'
                 }
               >
                 <span className={rule.mode === 'exclude' ? 'line-through decoration-rose-300/70' : ''}>{ruleText(rule)}</span>
                 <button
                   type="button"
-                  className="rounded-sm border border-current px-1 leading-none text-[10px]"
+                  className="rounded-lg border border-current px-1 leading-none text-[10px]"
                   onClick={() => removeRule(index)}
                   aria-label={`Remove ${ruleText(rule)}`}
                 >

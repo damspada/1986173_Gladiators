@@ -49,15 +49,15 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectEvent }: SensorGr
   }
 
   return (
-    <section className="tactical-panel relative min-h-[20rem] overflow-hidden p-4">
-      <div className="relative z-10 flex items-center justify-between pb-3 text-xs uppercase tracking-[0.22em] text-zinc-400">
+    <section className="tactical-panel module-reveal relative min-h-[22rem] overflow-hidden p-5">
+      <div className="relative z-10 flex items-center justify-between pb-4 micro-label">
         <span>Global Sensor Map</span>
         <span>{sensors.length} units online</span>
       </div>
 
-      <div className="relative z-10 h-[16.5rem] rounded-sm border border-zinc-700/80 bg-zinc-950/70">
+      <div className="relative z-10 h-[18rem] rounded-2xl border border-slate-200/15 bg-slate-950/35">
         {sensors.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-sm uppercase tracking-[0.2em] text-zinc-500">
+          <div className="flex h-full items-center justify-center text-sm uppercase tracking-[0.22em] text-zinc-500">
             Waiting for sensor telemetry...
           </div>
         ) : (
@@ -96,10 +96,10 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectEvent }: SensorGr
                   }
                 >
                   <Tooltip direction="top" offset={[0, -10]} opacity={0.95} className="sensor-map-tooltip">
-                    <div className="text-[10px] uppercase tracking-[0.14em]">
+                    <div className="text-[10px] uppercase tracking-[0.16em]">
                       <div>{sensor.sensor_id}</div>
-                      <div className="mt-1 text-zinc-300">{sensor.region}</div>
-                      <div className="mt-1 text-zinc-400">
+                      <div className="mt-1 text-zinc-300/90">{sensor.region}</div>
+                      <div className="mt-1 text-zinc-400/90">
                         {sensor.lat.toFixed(2)}, {sensor.long.toFixed(2)}
                       </div>
                     </div>

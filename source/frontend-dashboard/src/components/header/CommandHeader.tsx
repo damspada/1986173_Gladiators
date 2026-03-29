@@ -13,14 +13,14 @@ export const CommandHeader = ({ connectionState, liveConfigWarning }: CommandHea
   const utcClock = useUtcClock()
 
   return (
-    <header className="tactical-panel border-zinc-700/80 px-4 py-4 md:px-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <header className="tactical-panel module-reveal border-white/10 px-5 py-5 md:px-8 md:py-7">
+      <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.42em] text-cyan-300/90">Strategic Theater // Year 2038</p>
-          <h1 className="mt-1 text-xl font-semibold tracking-[0.18em] text-zinc-100 md:text-2xl">GLOBAL SEISMIC MONITOR</h1>
+          <p className="kicker-label">Global Seismic Intelligence Platform</p>
+          <h1 className="display-heading mt-2 text-balance text-slate-100">Depth-Aware Seismic Monitor</h1>
         </div>
-        <div className="flex flex-col items-start gap-2 text-xs uppercase tracking-[0.22em] text-zinc-300 md:items-end">
-          <nav className="inline-flex rounded-sm border border-zinc-700/90 bg-zinc-900/80 p-1 text-[10px] tracking-[0.16em]">
+        <div className="flex flex-col items-start gap-3 text-xs uppercase tracking-[0.22em] text-zinc-300 md:items-end">
+          <nav className="inline-flex rounded-2xl border border-slate-200/15 bg-slate-900/50 p-1.5 text-[10px] tracking-[0.2em] backdrop-blur-md">
             {[
               { to: '/live', label: 'Live' },
               { to: '/history', label: 'History' },
@@ -30,9 +30,9 @@ export const CommandHeader = ({ connectionState, liveConfigWarning }: CommandHea
                 to={item.to}
                 className={({ isActive }) =>
                   clsx(
-                    'rounded-sm border border-transparent px-3 py-1 text-zinc-300 transition',
-                    'hover:border-cyan-500/70 hover:text-zinc-100',
-                    isActive && 'border-cyan-400/80 bg-cyan-500/10 text-cyan-200',
+                    'liquid-hover rounded-xl border border-transparent px-4 py-1.5 text-zinc-300 transition',
+                    'hover:border-cyan-200/40 hover:bg-cyan-300/10 hover:text-zinc-100',
+                    isActive && 'border-cyan-200/60 bg-cyan-300/20 text-cyan-100 shadow-[0_8px_24px_rgba(30,230,255,0.18)]',
                   )
                 }
               >
@@ -41,11 +41,11 @@ export const CommandHeader = ({ connectionState, liveConfigWarning }: CommandHea
             ))}
           </nav>
 
-          <span className="rounded-sm border border-zinc-700 bg-zinc-900/70 px-3 py-1">UTC {utcClock}</span>
+          <span className="micro-label rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-1.5">UTC {utcClock}</span>
           <StatusDot state={connectionState} />
 
           {liveConfigWarning ? (
-            <span className="max-w-[22rem] rounded-sm border border-rose-400/70 bg-rose-900/25 px-2 py-1 text-[10px] tracking-[0.1em] text-rose-300">
+            <span className="max-w-[22rem] rounded-xl border border-rose-300/45 bg-rose-400/10 px-3 py-2 text-[10px] tracking-[0.14em] text-rose-200">
               {liveConfigWarning}
             </span>
           ) : null}

@@ -38,9 +38,9 @@ export const HistoryTimeControls = ({ value, onChange, anchorMs }: HistoryTimeCo
   }
 
   return (
-    <section className="tactical-panel space-y-3 bg-[#0a0a0a] p-3 font-mono">
+    <section className="tactical-panel module-reveal space-y-4 p-4">
       <div className="space-y-2">
-        <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-300">Time Quick Presets (UTC)</p>
+        <p className="micro-label">Time Quick Presets (UTC)</p>
         <div className="flex flex-wrap gap-1">
           {PRESETS.map((preset) => (
             <button
@@ -48,8 +48,8 @@ export const HistoryTimeControls = ({ value, onChange, anchorMs }: HistoryTimeCo
               type="button"
               className={
                 value.preset === preset.value
-                  ? 'rounded-sm border border-cyan-400/80 bg-cyan-500/15 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-200'
-                  : 'rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200'
+                  ? 'rounded-xl border border-cyan-200/55 bg-cyan-300/18 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-cyan-100'
+                  : 'liquid-hover rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-200/45 hover:text-cyan-100'
               }
               onClick={() => applyPreset(preset.value, preset.durationMs)}
             >
@@ -58,7 +58,7 @@ export const HistoryTimeControls = ({ value, onChange, anchorMs }: HistoryTimeCo
           ))}
           <button
             type="button"
-            className="rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
+            className="liquid-hover rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
             onClick={() => onChange({ fromUtc: '', toUtc: '', preset: null })}
           >
             Reset Time
@@ -67,21 +67,21 @@ export const HistoryTimeControls = ({ value, onChange, anchorMs }: HistoryTimeCo
       </div>
 
       <div className="grid gap-2 md:grid-cols-2">
-        <label className="space-y-1 text-[11px] uppercase tracking-[0.16em] text-zinc-400">
+        <label className="space-y-1 text-[11px] uppercase tracking-[0.18em] text-zinc-400">
           <span>Da (UTC)</span>
           <input
             type="datetime-local"
-            className="w-full rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs text-zinc-100"
+            className="w-full rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-2 text-xs text-zinc-100"
             value={value.fromUtc}
             onChange={(event) => onChange({ ...value, fromUtc: event.target.value, preset: null })}
           />
         </label>
 
-        <label className="space-y-1 text-[11px] uppercase tracking-[0.16em] text-zinc-400">
+        <label className="space-y-1 text-[11px] uppercase tracking-[0.18em] text-zinc-400">
           <span>A (UTC)</span>
           <input
             type="datetime-local"
-            className="w-full rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-2 text-xs text-zinc-100"
+            className="w-full rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-2 text-xs text-zinc-100"
             value={value.toUtc}
             onChange={(event) => onChange({ ...value, toUtc: event.target.value, preset: null })}
           />

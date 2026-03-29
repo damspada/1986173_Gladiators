@@ -12,17 +12,19 @@ interface HistoryTableProps {
 
 export const HistoryTable = ({ events, loading, error, onSelectEvent }: HistoryTableProps) => {
   return (
-    <section className="tactical-panel p-4">
-      <h2 className="mb-3 text-xs uppercase tracking-[0.26em] text-zinc-400">Historical Records</h2>
-      <div className="overflow-hidden rounded-sm border border-zinc-700/90">
-        <div className="grid grid-cols-[0.8fr_1.4fr_0.8fr_1.2fr_1.2fr] bg-zinc-900 px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-          <span>Sensor</span>
-          <span>Timestamp</span>
-          <span>Frequency</span>
-          <span>Classification</span>
-          <span>Region</span>
+    <section className="tactical-panel module-reveal p-5">
+      <h2 className="mb-4 text-xs uppercase tracking-[0.28em] text-zinc-400">Historical Records</h2>
+      <div className="overflow-hidden rounded-2xl border border-slate-200/15 bg-slate-950/20">
+        <div className="overflow-x-auto">
+          <div className="grid min-w-[50rem] grid-cols-[7rem_12rem_8rem_12rem_1fr] bg-slate-900/55 px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+            <span className="whitespace-nowrap">Sensor</span>
+            <span className="whitespace-nowrap">Timestamp</span>
+            <span className="whitespace-nowrap">Frequency</span>
+            <span className="whitespace-nowrap">Classification</span>
+            <span className="whitespace-nowrap">Region</span>
+          </div>
         </div>
-        <div className="max-h-[22rem] overflow-y-auto bg-zinc-950/70">
+        <div className="max-h-[24rem] overflow-auto bg-slate-950/30">
           {loading ? (
             <p className="px-3 py-10 text-center text-sm uppercase tracking-[0.2em] text-zinc-500">Loading history...</p>
           ) : error ? (
@@ -33,7 +35,7 @@ export const HistoryTable = ({ events, loading, error, onSelectEvent }: HistoryT
             events.map((event) => (
               <div
                 key={event.event_id}
-                className="grid grid-cols-[0.8fr_1.4fr_0.8fr_1.2fr_1.2fr] items-center border-b border-zinc-800/70 px-3 py-2 text-xs text-zinc-200 transition hover:bg-zinc-900/40"
+                className="liquid-hover grid min-w-[50rem] grid-cols-[7rem_12rem_8rem_12rem_1fr] items-center border-b border-slate-300/10 px-3 py-2 text-xs text-zinc-200 transition hover:bg-cyan-300/8"
                 role="button"
                 tabIndex={0}
                 onClick={() => onSelectEvent(event)}
@@ -44,18 +46,18 @@ export const HistoryTable = ({ events, loading, error, onSelectEvent }: HistoryT
                   }
                 }}
               >
-                <span className="font-medium text-zinc-100">{event.sensor_id}</span>
-                <span className="text-zinc-400">{formatUtcTimestamp(event.timestamp)}</span>
-                <span>{formatFrequency(event.frequency)}</span>
+                <span className="whitespace-nowrap font-medium text-zinc-100">{event.sensor_id}</span>
+                <span className="whitespace-nowrap text-zinc-400">{formatUtcTimestamp(event.timestamp)}</span>
+                <span className="whitespace-nowrap">{formatFrequency(event.frequency)}</span>
                 <span
                   className={clsx(
-                    'inline-flex max-w-fit rounded-sm border px-2 py-1 text-[11px] uppercase tracking-[0.08em]',
+                    'inline-flex max-w-fit whitespace-nowrap rounded-sm border px-2 py-1 text-[11px] uppercase tracking-[0.08em]',
                     classificationBadgeClass[event.classification],
                   )}
                 >
                   {classificationLabel[event.classification]}
                 </span>
-                <span>{event.sensor?.region ?? 'UNSPECIFIED'}</span>
+                <span className="truncate">{event.sensor?.region ?? 'UNSPECIFIED'}</span>
               </div>
             ))
           )}

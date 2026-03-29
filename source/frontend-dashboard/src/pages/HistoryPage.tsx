@@ -152,21 +152,21 @@ export const HistoryPage = ({ onSelectEvent }: HistoryPageProps) => {
   const handleFiltersChange = (next: HistoryFilterRule[]) => setRules(next)
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
+    <section className="grid gap-5 lg:grid-cols-[20rem_minmax(0,1fr)] xl:grid-cols-[22rem_minmax(0,1fr)]">
       <HistoryFiltersPanel
         value={rules}
         availableSensors={availableSensors}
         availableRegions={availableRegions}
         onChange={handleFiltersChange}
       />
-      <div className="space-y-4">
-        <section className="tactical-panel flex items-center justify-between gap-2 bg-[#0a0a0a] p-3 font-mono">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-400">
+      <div className="space-y-5">
+        <section className="tactical-panel flex flex-wrap items-center justify-between gap-3 p-4">
+          <p className="micro-label">
             History sync control
           </p>
           <button
             type="button"
-            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-500"
+            className="liquid-hover rounded-xl border border-cyan-200/45 bg-cyan-300/15 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-cyan-300/22 disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-900/50 disabled:text-zinc-500"
             onClick={() => void refreshHistory()}
             disabled={loading}
           >

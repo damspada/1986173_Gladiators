@@ -18,9 +18,9 @@ const MIN_WINDOW_RATIO = 0.14
 const DEFAULT_WINDOW_RATIO = 0.34
 
 const toneClass: Record<SeismicEvent['classification'], string> = {
-  EARTHQUAKE: 'border-cyan-300/80 bg-cyan-500 text-cyan-100 shadow-[0_0_12px_rgba(34,211,238,0.75)]',
-  CONVENTIONAL_EXPLOSION: 'border-amber-300/80 bg-amber-500 text-amber-100 shadow-[0_0_12px_rgba(245,158,11,0.75)]',
-  NUCLEAR_LIKE: 'border-rose-300/80 bg-rose-600 text-rose-100 shadow-[0_0_12px_rgba(225,29,72,0.75)]',
+  EARTHQUAKE: 'border-sky-200/85 bg-sky-400 text-sky-100 shadow-[0_0_14px_rgba(74,199,233,0.72)]',
+  CONVENTIONAL_EXPLOSION: 'border-teal-200/85 bg-teal-400 text-teal-100 shadow-[0_0_14px_rgba(89,178,223,0.72)]',
+  NUCLEAR_LIKE: 'border-indigo-200/85 bg-indigo-400 text-indigo-100 shadow-[0_0_14px_rgba(126,156,230,0.72)]',
 }
 
 const toMs = (value: string | undefined): number | undefined => {
@@ -259,7 +259,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
 
   if (!hasEvents) {
     return (
-      <section className="tactical-panel p-4">
+      <section className="tactical-panel module-reveal p-5">
         <h2 className="mb-3 text-xs uppercase tracking-[0.26em] text-zinc-400">Event Timeline</h2>
         <p className="py-6 text-sm uppercase tracking-[0.2em] text-zinc-500">No historical events match current filters.</p>
       </section>
@@ -267,47 +267,47 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
   }
 
   return (
-    <section className="tactical-panel p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <section className="tactical-panel module-reveal p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xs uppercase tracking-[0.26em] text-zinc-400">Event Timeline</h2>
         <div className="flex items-center gap-1">
           <button
             type="button"
-            className="rounded-sm border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
+            className="liquid-hover rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-200/45 hover:text-cyan-100"
             onClick={zoomIn}
           >
             Zoom In
           </button>
           <button
             type="button"
-            className="rounded-sm border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
+            className="liquid-hover rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-200/45 hover:text-cyan-100"
             onClick={zoomOut}
           >
             Zoom Out
           </button>
           <button
             type="button"
-            className="rounded-sm border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
+            className="liquid-hover rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-200/45 hover:text-cyan-100"
             onClick={resetZoom}
           >
             Reset
           </button>
           <button
             type="button"
-            className="rounded-sm border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
+            className="liquid-hover rounded-xl border border-slate-200/15 bg-slate-900/45 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-300 transition hover:border-cyan-200/45 hover:text-cyan-100"
             onClick={jumpToLatest}
           >
             Latest
           </button>
         </div>
       </div>
-      <div className="rounded-sm border border-zinc-700/80 bg-zinc-950/60">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/80 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
+      <div className="overflow-hidden rounded-2xl border border-slate-200/15 bg-slate-950/25">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-300/10 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
           <span>Visible Range: {viewStartLabel} - {viewEndLabel}</span>
           <span>Zoom: {zoomPercent}% of full arc</span>
         </div>
 
-        <div className="grid grid-cols-[8rem_minmax(0,1fr)] border-b border-zinc-700/80 bg-zinc-900/80 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+        <div className="grid grid-cols-[8rem_minmax(0,1fr)] border-b border-slate-300/10 bg-slate-900/55 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
           <div className="px-3 py-2">Sensor</div>
           <div className="px-3 py-2">
             <div className="relative h-6 w-full">
@@ -330,11 +330,11 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
 
         <div>
           <div className="grid grid-cols-[8rem_minmax(0,1fr)]">
-            <div className="border-r border-zinc-700/80 bg-zinc-900/60">
+            <div className="border-r border-slate-300/10 bg-slate-900/35">
               {sensors.map((sensorId) => (
                 <div
                   key={`sensor-${sensorId}`}
-                  className="flex items-center border-b border-zinc-800/70 px-3 text-[11px] uppercase tracking-[0.14em] text-zinc-200"
+                  className="flex items-center border-b border-slate-300/10 px-3 text-[11px] uppercase tracking-[0.14em] text-zinc-200"
                   style={{ height: `${ROW_HEIGHT}px` }}
                 >
                   {sensorId}
@@ -344,13 +344,13 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
 
             <div>
               <div
-                className="relative w-full bg-[repeating-linear-gradient(to_right,rgba(255,255,255,0.04),rgba(255,255,255,0.04)_1px,transparent_1px,transparent_8.33%)]"
+                className="relative w-full bg-[repeating-linear-gradient(to_right,rgba(194,233,245,0.05),rgba(194,233,245,0.05)_1px,transparent_1px,transparent_8.33%)]"
                 style={{ height: `${tracksHeight}px` }}
               >
                 {sensors.map((sensorId, sensorIndex) => (
                   <div
                     key={`track-line-${sensorId}`}
-                    className="absolute left-0 right-0 border-b border-zinc-800/70"
+                    className="absolute left-0 right-0 border-b border-slate-300/10"
                     style={{ top: `${(sensorIndex + 1) * ROW_HEIGHT}px` }}
                   />
                 ))}
@@ -390,7 +390,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
                       >
                         <span className="pointer-events-none absolute inset-0 animate-pulse rounded-full border border-current opacity-35" />
 
-                        <div className="pointer-events-none absolute -top-2 left-1/2 z-10 hidden w-64 -translate-x-1/2 -translate-y-full rounded-sm border border-zinc-600 bg-zinc-950/95 p-2 text-[11px] tracking-[0.04em] text-zinc-200 shadow-[0_12px_24px_rgba(0,0,0,0.55)] group-hover:block">
+                        <div className="pointer-events-none absolute -top-2 left-1/2 z-10 hidden w-64 -translate-x-1/2 -translate-y-full rounded-xl border border-slate-200/20 bg-slate-950/95 p-2 text-[11px] tracking-[0.04em] text-zinc-200 shadow-[0_12px_24px_rgba(2,8,12,0.55)] group-hover:block">
                           <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">{event.sensor_id}</p>
                           <p className="mt-1">Type: {classificationLabel[event.classification]}</p>
                           <p>Frequency: {event.frequency.toFixed(2)} Hz</p>
@@ -407,19 +407,19 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
           </div>
         </div>
 
-        <div className="border-t border-zinc-700/80 px-3 py-3">
+        <div className="border-t border-slate-300/10 px-3 py-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
             <p>Navigator (Zoom & Pan)</p>
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-cyan-400" />Earthquake</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400" />Conventional</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" />Nuclear-like</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-sky-400" />Earthquake</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-teal-400" />Conventional</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-indigo-400" />Nuclear-like</span>
             </div>
           </div>
 
           <div
             ref={minimapRef}
-            className="relative h-9 rounded-sm border border-zinc-700/80 bg-[linear-gradient(90deg,rgba(34,211,238,0.06),transparent_35%,transparent_65%,rgba(225,29,72,0.06))]"
+            className="relative h-9 rounded-xl border border-slate-200/15 bg-[linear-gradient(90deg,rgba(74,199,233,0.1),transparent_35%,transparent_65%,rgba(126,156,230,0.1))]"
             onWheel={handleMinimapWheel}
             onClick={handleMinimapClick}
           >
@@ -432,9 +432,9 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
                 <span
                   key={`mini-${event.event_id}`}
                   className={clsx('absolute top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full', {
-                    'bg-cyan-400': event.classification === 'EARTHQUAKE',
-                    'bg-amber-400': event.classification === 'CONVENTIONAL_EXPLOSION',
-                    'bg-rose-500': event.classification === 'NUCLEAR_LIKE',
+                    'bg-sky-400': event.classification === 'EARTHQUAKE',
+                    'bg-teal-400': event.classification === 'CONVENTIONAL_EXPLOSION',
+                    'bg-indigo-400': event.classification === 'NUCLEAR_LIKE',
                   })}
                   style={{ left: `${leftPercent}%` }}
                 />
@@ -442,7 +442,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
             })}
 
             <div
-              className="absolute bottom-0 top-0 cursor-grab rounded-sm border border-cyan-300/80 bg-cyan-400/20 active:cursor-grabbing"
+              className="absolute bottom-0 top-0 cursor-grab rounded-xl border border-cyan-200/80 bg-cyan-300/22 active:cursor-grabbing"
               style={{
                 left: `${safeWindowStart * 100}%`,
                 width: `${safeWindowWidth * 100}%`,
@@ -451,7 +451,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
               data-viewport-part="true"
             >
               <div
-                className="absolute bottom-0 left-0 top-0 w-2 cursor-ew-resize border-r border-cyan-200/80 bg-cyan-300/35"
+                className="absolute bottom-0 left-0 top-0 w-2 cursor-ew-resize border-r border-cyan-100/90 bg-cyan-200/35"
                 onMouseDown={(event) => {
                   event.stopPropagation()
                   startDrag('resize-left')(event)
@@ -459,7 +459,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
                 data-viewport-part="true"
               />
               <div
-                className="absolute bottom-0 right-0 top-0 w-2 cursor-ew-resize border-l border-cyan-200/80 bg-cyan-300/35"
+                className="absolute bottom-0 right-0 top-0 w-2 cursor-ew-resize border-l border-cyan-100/90 bg-cyan-200/35"
                 onMouseDown={(event) => {
                   event.stopPropagation()
                   startDrag('resize-right')(event)
