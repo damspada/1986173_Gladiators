@@ -95,16 +95,12 @@ const normalizePayload = (payload: RawStreamPayload): SeismicEvent => {
 }
 
 const normalizeHistoryPayload = (payload: RawHistoryPayload): SeismicEvent => {
-  const raw = payload.classification as string | undefined
-  const classification =
-    (raw === 'NUCLEAR_EVENT' ? 'NUCLEAR_LIKE' : raw as SeismicEvent['classification']) ??
-    classifyByFrequency(payload.frequency)
   return {
     event_id: payload.event_id,
     sensor_id: payload.sensor_id,
     timestamp: payload.timestamp,
     frequency: payload.frequency,
-    classification,
+    classification: payload.classification ?? classifyByFrequency(payload.frequency),
     amplitude: payload.amplitude,
     sensor: payload.sensor,
   }
@@ -245,31 +241,6 @@ export const useSeismicStream = ({
       setConnectionState(attempt === 0 ? 'connecting' : 'reconnecting')
       setReconnectAttempt(attempt)
 
-      const queueReconnect = (errorMessage: string) => {
-        if (!isMounted || manualClose || reconnectTimer !== null) {
-          return
-        }
-
-        setConnectionState('reconnecting')
-        setCurrentFaultType('network')
-        setLastError(errorMessage)
-
-        const nextAttempt = currentAttempt + 1
-        currentAttempt = nextAttempt
-        setReconnectAttempt(nextAttempt)
-        setReconnectCount((previous) => previous + 1)
-
-        if (disconnectStartedAtMs === null) {
-          disconnectStartedAtMs = Date.now()
-        }
-
-        const delay = Math.min(BASE_DELAY_MS * 2 ** (nextAttempt - 1), MAX_DELAY_MS)
-        reconnectTimer = window.setTimeout(() => {
-          reconnectTimer = null
-          connect(nextAttempt)
-        }, delay)
-      }
-
       try {
         socket = new WebSocket(normalizedSocketUrl)
 
@@ -366,11 +337,35 @@ export const useSeismicStream = ({
         }
 
         socket.onerror = () => {
-          queueReconnect('Socket error detected.')
+          if (!isMounted) {
+            return
+          }
+
+          setConnectionState('error')
+          setLastError('Socket error detected.')
+          setCurrentFaultType('network')
         }
 
         socket.onclose = () => {
-          queueReconnect('Socket closed unexpectedly.')
+          if (!isMounted || manualClose) {
+            return
+          }
+
+          setConnectionState('reconnecting')
+          setCurrentFaultType('network')
+          const nextAttempt = currentAttempt + 1
+          currentAttempt = nextAttempt
+          setReconnectAttempt(nextAttempt)
+          setReconnectCount((previous) => previous + 1)
+
+          if (disconnectStartedAtMs === null) {
+            disconnectStartedAtMs = Date.now()
+          }
+
+          const delay = Math.min(BASE_DELAY_MS * nextAttempt, MAX_DELAY_MS)
+          reconnectTimer = window.setTimeout(() => {
+            connect(nextAttempt)
+          }, delay)
         }
       } catch {
         if (!isMounted) {

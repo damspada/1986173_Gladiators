@@ -13,7 +13,7 @@ services:
     ports:
       - "9090:8080"
     environment:
-      SAMPLING_RATE_HZ: 100
+      SAMPLING_RATE_HZ: 170
       AUTO_SHUTDOWN_ENABLED: "true"
       AUTO_SHUTDOWN_MIN_SECONDS: 30
       AUTO_SHUTDOWN_MAX_SECONDS: 90

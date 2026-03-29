@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import org.example.model.DisconnectionEvent;
 import org.example.model.Replica;
 import org.example.repository.ReplicaRepository;
+import org.example.websocket.InfrastructureWebSocketHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,13 +36,16 @@ public class BrokerWebSocketClient {
     private static final Logger log = LoggerFactory.getLogger(BrokerWebSocketClient.class);
 
     private final ReplicaRepository replicaRepository;
+    private final InfrastructureWebSocketHandler infrastructureWebSocketHandler;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${broker.ws-url:ws://broker:9090/backend/ws}")
     private String brokerWsUrl;
 
-    public BrokerWebSocketClient(ReplicaRepository replicaRepository) {
+    public BrokerWebSocketClient(ReplicaRepository replicaRepository,
+                                 InfrastructureWebSocketHandler infrastructureWebSocketHandler) {
         this.replicaRepository = replicaRepository;
+        this.infrastructureWebSocketHandler = infrastructureWebSocketHandler;
     }
 
     @PostConstruct
@@ -94,6 +98,11 @@ public class BrokerWebSocketClient {
             }
 
             replicaRepository.save(replica);
+                infrastructureWebSocketHandler.broadcastReplicaStatus(
+                    replicaId,
+                    status,
+                    eventTime.toInstant().toString()
+                );
             log.info("Replica {} → {}", replicaId, status);
 
         } catch (Exception e) {

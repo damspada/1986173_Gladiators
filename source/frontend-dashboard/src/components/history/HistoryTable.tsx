@@ -64,13 +64,14 @@ export const HistoryTable = ({
       </p>
 
       <div className="overflow-x-auto rounded-sm border border-zinc-700/90">
-        <div className="min-w-[50rem]">
-          <div className="grid grid-cols-[0.8fr_1.4fr_0.7fr_1.1fr_1fr] bg-zinc-900 px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+        <div className="min-w-[56rem]">
+          <div className="grid grid-cols-[0.8fr_1.4fr_0.7fr_1.1fr_1fr_0.8fr] bg-zinc-900 px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
             <span>Sensor</span>
             <span>Timestamp</span>
             <span>Frequency</span>
             <span>Classification</span>
             <span>Region</span>
+            <span>Severity</span>
           </div>
           <div className="max-h-[22rem] overflow-y-auto bg-zinc-950/70">
           {loading ? (
@@ -83,7 +84,7 @@ export const HistoryTable = ({
             events.map((event) => (
               <div
                 key={event.event_id}
-                className="grid grid-cols-[0.8fr_1.4fr_0.7fr_1.1fr_1fr] items-center border-b border-zinc-800/70 px-3 py-2 text-xs text-zinc-200 transition hover:bg-zinc-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                className="grid grid-cols-[0.8fr_1.4fr_0.7fr_1.1fr_1fr_0.8fr] items-center border-b border-zinc-800/70 px-3 py-2 text-xs text-zinc-200 transition hover:bg-zinc-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
                 role="button"
                 tabIndex={0}
                 onClick={() => onSelectEvent(event)}
@@ -113,6 +114,18 @@ export const HistoryTable = ({
                   ) : (
                     'UNSPECIFIED'
                   )}
+                </span>
+                <span
+                  className={clsx(
+                    'inline-flex max-w-fit rounded-sm border px-2 py-1 text-[10px] uppercase tracking-[0.08em]',
+                    event.severity === 'critical'
+                      ? 'border-rose-500/70 bg-rose-500/15 text-rose-200'
+                      : event.severity === 'warning'
+                        ? 'border-amber-500/70 bg-amber-500/15 text-amber-200'
+                        : 'border-emerald-500/70 bg-emerald-500/10 text-emerald-200',
+                  )}
+                >
+                  {(event.severity ?? 'normal').toUpperCase()}
                 </span>
               </div>
             ))

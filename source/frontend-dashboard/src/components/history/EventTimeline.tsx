@@ -321,7 +321,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
                     className={clsx('absolute top-0', alignClass)}
                     style={index > 0 && index < axisMarks.length - 1 ? { left: `${mark.leftPct}%` } : undefined}
                   >
-                    <span className="whitespace-nowrap text-[8px] leading-none text-zinc-400">{mark.label}</span>
+                    <span className="text-[9px] text-zinc-400">{mark.label}</span>
                   </div>
                 )
               })}

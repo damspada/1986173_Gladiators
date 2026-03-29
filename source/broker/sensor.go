@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -31,49 +32,54 @@ func leggiSensore(sensor Sensor, hub *Hub, wg *sync.WaitGroup) {
 
 	simulatorURL := getSimulatorURL()
 	wsURL := strings.Replace(simulatorURL, "http://", "ws://", 1) + sensor.WebSocketURL
-	fmt.Printf("Connessione a %s (%s)...\n", sensor.Name, wsURL)
-
-	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
-	if err != nil {
-		fmt.Printf("Errore connessione %s: %v\n", sensor.Name, err)
-		return
-	}
-	defer conn.Close()
-
-	fmt.Printf("Connesso a %s!\n", sensor.Name)
 
 	for {
-		_, raw, err := conn.ReadMessage()
-		if err != nil {
-			fmt.Printf("Connessione persa con %s: %v\n", sensor.Name, err)
-			return
-		}
+		fmt.Printf("Connessione a %s (%s)...\n", sensor.Name, wsURL)
 
-		// parsa il messaggio del sensore
-		var measurement Measurement
-		err = json.Unmarshal(raw, &measurement)
+		conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 		if err != nil {
-			fmt.Printf("Errore parsing %s: %v\n", sensor.ID, err)
+			fmt.Printf("Errore connessione %s: %v. Riprovo tra 3s...\n", sensor.Name, err)
+			time.Sleep(3 * time.Second)
 			continue
 		}
 
-		// costruisci il messaggio da mandare alle repliche (con metadati sensore)
-		msg := Message{
-			SensorID:  sensor.ID,
-			Timestamp: measurement.Timestamp,
-			Value:     measurement.Value,
-			Lat:       sensor.Coordinates.Latitude,
-			Lon:       sensor.Coordinates.Longitude,
-			Region:    sensor.Region,
-		}
+		fmt.Printf("Connesso a %s!\n", sensor.Name)
 
-		// converti in JSON e manda a tutte le repliche
-		data, err := json.Marshal(msg)
-		if err != nil {
-			fmt.Printf("Errore encoding %s: %v\n", sensor.ID, err)
-			continue
-		}
+		for {
+			_, raw, err := conn.ReadMessage()
+			if err != nil {
+				fmt.Printf("Connessione persa con %s: %v. Riconnessione in 2s...\n", sensor.Name, err)
+				_ = conn.Close()
+				time.Sleep(2 * time.Second)
+				break
+			}
 
-		hub.broadcast(data)
+			// parsa il messaggio del sensore
+			var measurement Measurement
+			err = json.Unmarshal(raw, &measurement)
+			if err != nil {
+				fmt.Printf("Errore parsing %s: %v\n", sensor.ID, err)
+				continue
+			}
+
+			// costruisci il messaggio da mandare alle repliche (con metadati sensore)
+			msg := Message{
+				SensorID:  sensor.ID,
+				Timestamp: measurement.Timestamp,
+				Value:     measurement.Value,
+				Lat:       sensor.Coordinates.Latitude,
+				Lon:       sensor.Coordinates.Longitude,
+				Region:    sensor.Region,
+			}
+
+			// converti in JSON e manda a tutte le repliche
+			data, err := json.Marshal(msg)
+			if err != nil {
+				fmt.Printf("Errore encoding %s: %v\n", sensor.ID, err)
+				continue
+			}
+
+			hub.broadcast(data)
+		}
 	}
 }

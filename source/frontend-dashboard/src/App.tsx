@@ -7,7 +7,6 @@ import { CommandHeader } from './components/header/CommandHeader'
 import { useInfrastructureStatus } from './hooks/useInfrastructureStatus'
 import { useSeismicStream } from './hooks/useSeismicStream'
 import { HistoryPage } from './pages/HistoryPage'
-import { InfrastructurePage } from './pages/InfrastructurePage'
 import { LiveDashboardPage } from './pages/LiveDashboardPage'
 import { SensorDetailsPage } from './pages/SensorDetailsPage'
 import { ZoneDetailsPage } from './pages/ZoneDetailsPage'
@@ -20,44 +19,6 @@ const BUILD_COMMIT = import.meta.env.VITE_BUILD_COMMIT || 'unknown'
 const BUILD_TIMESTAMP = import.meta.env.VITE_BUILD_TIMESTAMP || new Date().toISOString()
 const BACKEND_IMAGE_TAG = import.meta.env.VITE_BACKEND_IMAGE_TAG || 'untracked'
 const DECRYPT_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#?*'
-const THEME_STORAGE_KEY = 'gsm-theme-preferences-v1'
-
-type ThemeMode = 'dark' | 'light'
-type ThemePattern = 'classic' | 'amber' | 'emerald'
-
-interface ThemePreferences {
-  mode: ThemeMode
-  pattern: ThemePattern
-}
-
-const DEFAULT_THEME_PREFERENCES: ThemePreferences = {
-  mode: 'dark',
-  pattern: 'classic',
-}
-
-const isThemeMode = (value: unknown): value is ThemeMode => value === 'dark' || value === 'light'
-const isThemePattern = (value: unknown): value is ThemePattern => value === 'classic' || value === 'amber' || value === 'emerald'
-
-const readStoredThemePreferences = (): ThemePreferences => {
-  if (typeof window === 'undefined') {
-    return DEFAULT_THEME_PREFERENCES
-  }
-
-  try {
-    const raw = window.localStorage.getItem(THEME_STORAGE_KEY)
-    if (!raw) {
-      return DEFAULT_THEME_PREFERENCES
-    }
-
-    const parsed = JSON.parse(raw) as Partial<ThemePreferences>
-    return {
-      mode: isThemeMode(parsed.mode) ? parsed.mode : DEFAULT_THEME_PREFERENCES.mode,
-      pattern: isThemePattern(parsed.pattern) ? parsed.pattern : DEFAULT_THEME_PREFERENCES.pattern,
-    }
-  } catch {
-    return DEFAULT_THEME_PREFERENCES
-  }
-}
 
 const pageDecryptLabel = (pathname: string) => {
   if (pathname.startsWith('/history')) {
@@ -103,7 +64,6 @@ const AppFrame = () => {
   const [diagnostics, setDiagnostics] = useState<string[]>(() => buildBaseDiagnostics())
   const [selectedEvent, setSelectedEvent] = useState<SeismicEvent | null>(null)
   const [showAbout, setShowAbout] = useState(false)
-  const [themePreferences, setThemePreferences] = useState<ThemePreferences>(() => readStoredThemePreferences())
   const location = useLocation()
   const navigate = useNavigate()
   const [isRouteTransitioning, setIsRouteTransitioning] = useState(false)
@@ -134,6 +94,17 @@ const AppFrame = () => {
         checks.push('Backend health endpoint: unreachable (run docker compose up)')
       }
 
+      try {
+        const streamUrl = new URL(LIVE_HISTORY_URL)
+        streamUrl.pathname = '/api/mock/stream'
+        streamUrl.search = ''
+
+        const simulatorResponse = await fetch(streamUrl.toString())
+        checks.push(simulatorResponse.ok ? 'Simulator control endpoint: OK' : 'Simulator control endpoint: unavailable')
+      } catch {
+        checks.push('Simulator control endpoint: unreachable')
+      }
+
       if (active) {
         setDiagnostics(checks)
       }
@@ -145,12 +116,6 @@ const AppFrame = () => {
       active = false
     }
   }, [])
-
-  useEffect(() => {
-    document.documentElement.dataset.colorMode = themePreferences.mode
-    document.documentElement.dataset.colorPattern = themePreferences.pattern
-    window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themePreferences))
-  }, [themePreferences])
 
   useEffect(() => {
     const targetLabel = pageDecryptLabel(location.pathname)
@@ -185,21 +150,11 @@ const AppFrame = () => {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="relative mx-auto flex min-h-screen w-full max-w-[1300px] flex-col gap-4 px-3 py-4 md:px-5 md:py-6">
-        <div className="app-atmosphere absolute inset-0 -z-10 opacity-40" />
+        <div className="absolute inset-0 -z-10 opacity-40 [background:radial-gradient(circle_at_20%_0%,rgba(34,211,238,0.18),transparent_30%),radial-gradient(circle_at_90%_10%,rgba(190,24,93,0.15),transparent_35%),linear-gradient(#0a0a0a,#0a0a0a)]" />
 
         <CommandHeader
           connectionState={stream.connectionState}
           onOpenAbout={() => setShowAbout(true)}
-          themeMode={themePreferences.mode}
-          themePattern={themePreferences.pattern}
-          onChangeThemePattern={(pattern) => setThemePreferences((current) => ({ ...current, pattern }))}
-          onToggleThemeMode={() =>
-            setThemePreferences((current) => ({
-              ...current,
-              mode: current.mode === 'dark' ? 'light' : 'dark',
-            }))
-          }
-          onResetTheme={() => setThemePreferences(DEFAULT_THEME_PREFERENCES)}
         />
 
         <main className={isRouteTransitioning ? 'route-content route-content--transitioning' : 'route-content'}>
@@ -220,7 +175,6 @@ const AppFrame = () => {
               }
             />
             <Route path="/history" element={<HistoryPage onSelectEvent={setSelectedEvent} />} />
-            <Route path="/infrastructure" element={<InfrastructurePage historyApiUrl={LIVE_HISTORY_URL} disconnectHistory={stream.disconnectHistory} />} />
             <Route
               path="/sensors/:sensorId"
               element={
