@@ -1,77 +1,41 @@
-# Frontend Dashboard
+# Source Orchestration
 
-Frontend React + Vite per monitoraggio sismico realtime e vista storico.
+Questo compose permette di orchestrare:
 
-## Configurazione ambiente (obbligatoria)
+- frontend dashboard (React + Nginx)
+- backend del teammate (immagine esterna)
+- simulator ufficiale dell'assignment
 
-La URL realtime backend e la URL storico backend sono obbligatorie.
-Se `VITE_LIVE_WS_URL` manca, il frontend non usa fallback hardcoded e segnala configurazione assente.
+## Prerequisiti
 
-1. Copia il file di esempio:
-
-```bash
-cp .env.example .env
-```
-
-2. Imposta le variabili nel file `.env`:
-
-```env
-VITE_LIVE_WS_URL=ws://localhost:8090/api/events/ws
-VITE_HISTORY_API_URL=http://localhost:8090/api/history/events
-```
-
-Nota: per backend reale con stream per singolo sensore usare il path fornito dal contratto, ad esempio:
-
-```env
-VITE_LIVE_WS_URL=ws://backend-host:port/api/device/S-01/ws
-```
-
-## Avvio sviluppo
+1. Docker e Docker Compose installati
+2. Immagine del backend disponibile localmente oppure su registry accessibile
+3. Immagine simulator caricata localmente:
 
 ```bash
-npm install
-npm run dev
+docker load -i seismic-signal-simulator-oci.tar
 ```
 
-## Qualita codice
-
-```bash
-npm run lint
-npm run build
-```
-
-## Esecuzione con Docker Compose (frontend + backend + simulator)
-
-Nel repository e presente un orchestratore in `source/docker-compose.yml` pensato per
-integrare questo frontend con il backend sviluppato da un altro membro del team.
-
-1. Copia il file ambiente compose:
+## Avvio rapido
 
 ```bash
 cd /home/spada/Documenti/magistrale/labAP/1986173_Gladiators/source
 cp .env.compose.example .env
-```
+# modifica BACKEND_IMAGE e, se necessario, i path API
 
-2. Imposta almeno l'immagine backend del teammate:
-
-```env
-BACKEND_IMAGE=ghcr.io/<org>/<backend-image>:<tag>
-```
-
-3. Avvia i servizi:
-
-```bash
 docker compose up --build
 ```
 
-Endpoint default:
+## Variabili chiave
 
-- frontend: `http://localhost:5173`
-- backend: `http://localhost:8090`
-- simulator: `http://localhost:8080`
+- `BACKEND_IMAGE`: immagine backend del teammate
+- `BACKEND_UPSTREAM`: host:porta usato dal reverse proxy del frontend (default `backend:8080`)
+- `VITE_LIVE_WS_URL`: endpoint websocket usato dal frontend (default `/api/events/ws`)
+- `VITE_HISTORY_API_URL`: endpoint storico usato dal frontend (default `/api/history/events`)
+- `SIMULATOR_BASE_URL`: base URL del simulatore vista dal backend (default `http://simulator:8080`)
 
-Note operative:
+## Porte host default
 
-- `VITE_LIVE_WS_URL` e `VITE_HISTORY_API_URL` sono variabili di build del frontend.
-- Se usi path relativi (default), Nginx nel container frontend inoltra `/api/*` verso `BACKEND_UPSTREAM`.
-- Se il backend del teammate espone path diversi, aggiorna le due variabili in `.env`.
+- frontend: `5173`
+- backend: `8090`
+- simulator: `8080`
