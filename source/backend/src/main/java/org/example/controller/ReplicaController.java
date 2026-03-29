@@ -2,10 +2,12 @@ package org.example.controller;
 
 import org.example.dto.DisconnectionEventDto;
 import org.example.dto.ReplicaStatusDto;
+import org.example.model.Replica;
 import org.example.repository.DisconnectionEventRepository;
 import org.example.repository.ReplicaRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -73,5 +75,16 @@ public class ReplicaController {
                 .stream()
                 .map(DisconnectionEventDto::from)
                 .toList();
+    }
+
+    /** Mark a replica as shutting down (received SHUTDOWN command). */
+    @PutMapping("/{replicaId}/shutdown")
+    public void markReplicaAsShuttingDown(@PathVariable String replicaId) {
+        Replica replica = replicaRepository.findById(replicaId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND,
+                        "Replica not found: " + replicaId));
+        replica.setStatus("shutting_down");
+        replicaRepository.save(replica);
     }
 }

@@ -107,6 +107,12 @@ async def listen_to_control_stream():
                             msg = f"\n{'='*80}\n[CRASH] Replica {REPLICA_ID} received SHUTDOWN command - Terminating.\n{'='*80}\n"
                             print(msg, file=sys.stderr, flush=True)
                             print(f"[!!!] SHUTDOWN command received by replica {REPLICA_ID}. Terminating now.", flush=True)
+                            # Notify backend that this replica is shutting down
+                            try:
+                                await http_client.put(f"{BACKEND_URL}/api/replicas/{REPLICA_ID}/shutdown")
+                                print(f"[!] Notified backend of shutdown for replica {REPLICA_ID}")
+                            except Exception as e:
+                                print(f"[!] Failed to notify backend of shutdown: {e}")
                             os._exit(1)
         except Exception as e:
             print(f"[!] Control stream error: {e}. Retrying in 5s...")
