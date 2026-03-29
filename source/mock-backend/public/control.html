@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mock Backend Control Panel</title>
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --panel: #111317;
+        --line: rgba(115, 122, 128, 0.42);
+        --txt: #f1f5f9;
+        --muted: #9ca3af;
+        --ok: #22d3ee;
+        --bad: #fb7185;
+      }
+
+      * {
+        box-sizing: border-box;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+
+      body {
+        margin: 0;
+        padding: 18px;
+        background: radial-gradient(circle at 12% 0%, rgba(34, 211, 238, 0.12), transparent 28%), var(--bg);
+        color: var(--txt);
+      }
+
+      h1, h2 {
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      h1 { font-size: 14px; }
+      h2 { font-size: 12px; color: var(--muted); }
+
+      .layout {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: grid;
+        gap: 12px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 36%), var(--panel);
+        padding: 12px;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .grid {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      input, select, button {
+        border: 1px solid var(--line);
+        background: #0e1014;
+        color: var(--txt);
+        padding: 8px;
+        font-size: 12px;
+      }
+
+      button {
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .btn-ok {
+        border-color: rgba(34, 211, 238, 0.7);
+        color: #9ee9f3;
+      }
+
+      .btn-bad {
+        border-color: rgba(251, 113, 133, 0.7);
+        color: #fecdd3;
+      }
+
+      .preset {
+        padding: 10px;
+        border: 1px solid var(--line);
+        background: #0d1013;
+      }
+
+      .preset p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .status {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .log {
+        max-height: 180px;
+        overflow: auto;
+        background: #090b0e;
+        border: 1px solid var(--line);
+        padding: 8px;
+        font-size: 11px;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel row" style="justify-content: space-between">
+        <h1>Mock Backend Control UI</h1>
+        <span id="streamStatus" class="status">Loading stream status...</span>
+      </section>
+
+      <section class="panel">
+        <h2>Auto Stream Control</h2>
+        <div class="row" style="margin-top: 10px">
+          <label>
+            Interval ms
+            <input id="intervalMs" type="number" min="200" max="60000" step="100" value="1000" />
+          </label>
+          <button id="applyStream" class="btn-ok">Apply Interval</button>
+          <button id="startStream" class="btn-ok">Start Continuous Stream</button>
+          <button id="stopStream" class="btn-bad">Stop Continuous Stream</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Manual Precise Event</h2>
+        <div class="grid" style="margin-top: 10px">
+          <label>Sensor ID
+            <select id="sensorId"></select>
+          </label>
+          <label>Frequency (Hz)
+            <input id="frequency" type="number" step="0.01" placeholder="5.20" />
+          </label>
+          <label>Amplitude
+            <input id="amplitude" type="number" step="0.01" placeholder="7.00" />
+          </label>
+          <label>Timestamp (UTC ISO optional)
+            <input id="timestamp" type="text" placeholder="2026-03-28T22:00:00.000Z" />
+          </label>
+        </div>
+        <div class="row" style="margin-top: 8px">
+          <button id="sendManual" class="btn-ok">Send Precise Event</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="row" style="justify-content: space-between">
+          <h2>Demo Presets</h2>
+          <button id="stopPresets" class="btn-bad">Stop Preset Queue</button>
+        </div>
+        <div id="presetList" class="grid" style="margin-top: 10px"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Control Log</h2>
+        <div id="log" class="log" style="margin-top: 8px"></div>
+      </section>
+    </main>
+
+    <script>
+      const streamStatusEl = document.getElementById('streamStatus')
+      const intervalEl = document.getElementById('intervalMs')
+      const sensorEl = document.getElementById('sensorId')
+      const frequencyEl = document.getElementById('frequency')
+      const amplitudeEl = document.getElementById('amplitude')
+      const timestampEl = document.getElementById('timestamp')
+      const logEl = document.getElementById('log')
+      const presetListEl = document.getElementById('presetList')
+
+      const log = (message) => {
+        const line = `[${new Date().toISOString()}] ${message}`
+        logEl.textContent = line + '\n' + logEl.textContent
+      }
+
+      const request = async (url, options = {}) => {
+        const res = await fetch(url, {
+          headers: { 'Content-Type': 'application/json' },
+          ...options,
+        })
+
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(`${res.status} ${text}`)
+        }
+
+        return res.json()
+      }
+
+      const refreshStreamStatus = async () => {
+        const status = await request('/api/mock/stream')
+        intervalEl.value = String(status.intervalMs)
+        streamStatusEl.textContent = `STREAM: ${status.enabled ? 'RUNNING' : 'STOPPED'} | INTERVAL: ${status.intervalMs}ms | PRESET JOBS: ${status.activePresetJobs}`
+      }
+
+      const loadSensors = async () => {
+        const sensors = await request('/api/sensors')
+        sensorEl.innerHTML = sensors
+          .map((sensor) => `<option value="${sensor.sensor_id}">${sensor.sensor_id} - ${sensor.region}</option>`)
+          .join('')
+      }
+
+      const loadPresets = async () => {
+        const presets = await request('/api/mock/presets')
+        presetListEl.innerHTML = presets.map((preset) => {
+          return `
+            <div class="preset">
+              <strong>${preset.label}</strong>
+              <p>${preset.description}</p>
+              <p>Events: ${preset.events}</p>
+              <div class="row" style="margin-top:8px">
+                <button class="btn-ok" data-preset="${preset.name}">Run Preset</button>
+              </div>
+            </div>
+          `
+        }).join('')
+
+        presetListEl.querySelectorAll('button[data-preset]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const name = btn.getAttribute('data-preset')
+            try {
+              const out = await request('/api/mock/preset', {
+                method: 'POST',
+                body: JSON.stringify({ name }),
+              })
+              log(`Preset started: ${out.preset} (${out.scheduledEvents} events scheduled)`)
+              await refreshStreamStatus()
+            } catch (error) {
+              log(`Preset error: ${error.message}`)
+            }
+          })
+        })
+      }
+
+      document.getElementById('applyStream').addEventListener('click', async () => {
+        try {
+          const out = await request('/api/mock/stream', {
+            method: 'POST',
+            body: JSON.stringify({ intervalMs: Number(intervalEl.value) }),
+          })
+          log(`Stream interval updated to ${out.intervalMs}ms`)
+          await refreshStreamStatus()
+        } catch (error) {
+          log(`Interval update error: ${error.message}`)
+        }
+      })
+
+      document.getElementById('startStream').addEventListener('click', async () => {
+        try {
+          await request('/api/mock/stream', {
+            method: 'POST',
+            body: JSON.stringify({ enabled: true, intervalMs: Number(intervalEl.value) }),
+          })
+          log('Continuous stream started')
+          await refreshStreamStatus()
+        } catch (error) {
+          log(`Start stream error: ${error.message}`)
+        }
+      })
+
+      document.getElementById('stopStream').addEventListener('click', async () => {
+        try {
+          await request('/api/mock/stream', {
+            method: 'POST',
+            body: JSON.stringify({ enabled: false }),
+          })
+          log('Continuous stream stopped')
+          await refreshStreamStatus()
+        } catch (error) {
+          log(`Stop stream error: ${error.message}`)
+        }
+      })
+
+      document.getElementById('sendManual').addEventListener('click', async () => {
+        const body = {
+          sensor_id: sensorEl.value,
+          frequency: frequencyEl.value ? Number(frequencyEl.value) : undefined,
+          amplitude: amplitudeEl.value ? Number(amplitudeEl.value) : undefined,
+          timestamp: timestampEl.value || undefined,
+        }
+
+        try {
+          const out = await request('/api/mock/event', {
+            method: 'POST',
+            body: JSON.stringify(body),
+          })
+          log(`Manual event sent: ${out.event.event_id}`)
+        } catch (error) {
+          log(`Manual event error: ${error.message}`)
+        }
+      })
+
+      document.getElementById('stopPresets').addEventListener('click', async () => {
+        try {
+          await request('/api/mock/preset/stop', { method: 'POST' })
+          log('All preset queued events stopped')
+          await refreshStreamStatus()
+        } catch (error) {
+          log(`Stop presets error: ${error.message}`)
+        }
+      })
+
+      Promise.all([loadSensors(), loadPresets(), refreshStreamStatus()])
+        .then(() => log('Control panel ready'))
+        .catch((error) => log(`Initialization error: ${error.message}`))
+
+      setInterval(() => {
+        refreshStreamStatus().catch(() => {})
+      }, 3000)
+    </script>
+  </body>
+</html>
