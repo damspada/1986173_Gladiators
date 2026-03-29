@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 )
 
 type Coordinates struct {
@@ -22,11 +21,7 @@ type Sensor struct {
 }
 
 func getSimulatorURL() string {
-	url := os.Getenv("SIMULATOR_URL")
-	if url == "" {
-		return "http://simulator:8080"
-	}
-	return url
+	return "http://simulator:8080"
 }
 
 func getSensors() ([]Sensor, error) {
