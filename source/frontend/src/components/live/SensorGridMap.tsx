@@ -4,6 +4,21 @@ import { Circle, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-
 import { ZoneNavLink } from '../common/ZoneNavLink'
 import type { SeismicEvent, SensorMeta } from '../../types/seismic'
 
+const MapController = ({ latestEvent }: { latestEvent: (SeismicEvent & { sensor: SensorMeta }) | null }) => {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!latestEvent?.sensor) {
+      return
+    }
+    const lat = latestEvent.sensor.lat
+    const lng = latestEvent.sensor.long
+    map.setView([lat, lng], 6, { animate: true, duration: 0.8 })
+  }, [map, latestEvent?.event_id])
+
+  return null
+}
+
 interface SensorGridMapProps {
   sensors: SensorMeta[]
   latestEvents: SeismicEvent[]
@@ -150,6 +165,19 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectSensor }: SensorG
       </div>
 
       <div className="relative z-10 h-[13rem] rounded-sm border border-zinc-700/80 bg-zinc-950/70 sm:h-[16.5rem]">
+        <button
+          type="button"
+          className="absolute right-2 top-2 z-20 rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-300 transition hover:bg-cyan-500/20"
+          onClick={() => {
+            const elem = document.querySelector('.sensor-world-map') as HTMLElement | null
+            if (elem?.requestFullscreen) {
+              void elem.requestFullscreen()
+            }
+          }}
+          aria-label="Fullscreen"
+        >
+          ⛶
+        </button>
         <div className="map-radar-overlay" aria-hidden="true">
           <span className="map-radar-sweep" />
           <span className="map-radar-ring map-radar-ring--one" />
@@ -176,6 +204,10 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectSensor }: SensorG
             />
 
             <SensorBounds sensors={sensors} />
+
+            <MapController latestEvent={
+              latestEvents[0]?.sensor ? ({ ...latestEvents[0], sensor: latestEvents[0].sensor }) : null
+            } />
 
             {trailingEvents.map(({ event, ageMs, sensor }) => {
               const fade = 1 - ageMs / 40_000

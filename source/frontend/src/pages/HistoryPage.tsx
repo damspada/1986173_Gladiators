@@ -187,7 +187,7 @@ export const HistoryPage = ({ onSelectEvent }: HistoryPageProps) => {
   )
 
   const handleFiltersChange = (next: HistoryFilterRule[]) => setRules(next)
-  const incidentClusters = useMemo(() => groupEventsByIncident(filteredEvents, 10 * 60 * 1000), [filteredEvents])
+  const regionIncidents = useMemo(() => groupEventsByIncident(filteredEvents, 10 * 60 * 1000), [filteredEvents])
 
   const exportCsv = () => {
     const csv = toEventsCsv(filteredEvents)
@@ -227,20 +227,20 @@ export const HistoryPage = ({ onSelectEvent }: HistoryPageProps) => {
         <HistoryTimeControls value={timeFilter} onChange={setTimeFilter} anchorMs={latestEventMs} />
         <section className="tactical-panel p-3">
           <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-zinc-400">
-            <span>Incident-Focused Clusters</span>
-            <span>{incidentClusters.length} clusters in view</span>
+            <span>Region Incidents</span>
+            <span>{regionIncidents.length} regions in view</span>
           </div>
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-            {incidentClusters.slice(0, 6).map((cluster) => (
-              <div key={cluster.id} className="rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-2 py-2 text-xs">
+            {regionIncidents.slice(0, 6).map((region) => (
+              <div key={region.id} className="rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-2 py-2 text-xs">
                 <p className="uppercase tracking-[0.08em] text-zinc-100">
-                  <ZoneNavLink zone={cluster.region} className="px-0 py-0 text-zinc-100 hover:text-cyan-200" />
+                  <ZoneNavLink zone={region.region} className="px-0 py-0 text-zinc-100 hover:text-cyan-200" />
                 </p>
-                <p className="mt-1 text-zinc-400">{cluster.count} events | {classificationLabel[cluster.severity]}</p>
+                <p className="mt-1 text-zinc-400">{region.count} events | {classificationLabel[region.severity]}</p>
               </div>
             ))}
-            {incidentClusters.length === 0 ? (
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">No clusters in selected window.</p>
+            {regionIncidents.length === 0 ? (
+              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">No regions in selected window.</p>
             ) : null}
           </div>
         </section>

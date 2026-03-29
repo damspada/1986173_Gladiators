@@ -241,6 +241,31 @@ export const useSeismicStream = ({
       setConnectionState(attempt === 0 ? 'connecting' : 'reconnecting')
       setReconnectAttempt(attempt)
 
+      const queueReconnect = (errorMessage: string) => {
+        if (!isMounted || manualClose || reconnectTimer !== null) {
+          return
+        }
+
+        setConnectionState('reconnecting')
+        setCurrentFaultType('network')
+        setLastError(errorMessage)
+
+        const nextAttempt = currentAttempt + 1
+        currentAttempt = nextAttempt
+        setReconnectAttempt(nextAttempt)
+        setReconnectCount((previous) => previous + 1)
+
+        if (disconnectStartedAtMs === null) {
+          disconnectStartedAtMs = Date.now()
+        }
+
+        const delay = Math.min(BASE_DELAY_MS * 2 ** (nextAttempt - 1), MAX_DELAY_MS)
+        reconnectTimer = window.setTimeout(() => {
+          reconnectTimer = null
+          connect(nextAttempt)
+        }, delay)
+      }
+
       try {
         socket = new WebSocket(normalizedSocketUrl)
 
@@ -337,35 +362,11 @@ export const useSeismicStream = ({
         }
 
         socket.onerror = () => {
-          if (!isMounted) {
-            return
-          }
-
-          setConnectionState('error')
-          setLastError('Socket error detected.')
-          setCurrentFaultType('network')
+          queueReconnect('Socket error detected.')
         }
 
         socket.onclose = () => {
-          if (!isMounted || manualClose) {
-            return
-          }
-
-          setConnectionState('reconnecting')
-          setCurrentFaultType('network')
-          const nextAttempt = currentAttempt + 1
-          currentAttempt = nextAttempt
-          setReconnectAttempt(nextAttempt)
-          setReconnectCount((previous) => previous + 1)
-
-          if (disconnectStartedAtMs === null) {
-            disconnectStartedAtMs = Date.now()
-          }
-
-          const delay = Math.min(BASE_DELAY_MS * nextAttempt, MAX_DELAY_MS)
-          reconnectTimer = window.setTimeout(() => {
-            connect(nextAttempt)
-          }, delay)
+          queueReconnect('Socket closed unexpectedly.')
         }
       } catch {
         if (!isMounted) {
