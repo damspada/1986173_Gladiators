@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import asyncio
 import httpx
@@ -87,7 +88,6 @@ async def handle_detection(event, timestamp, metadata):
                     e.sensorId    = $sensor_id,
                     e.timestamp   = $timestamp,
                     e.frequency   = $frequency,
-                    e.amplitude   = 0.0,
                     e.classification = $classification,
                     e.lat         = $lat,
                     e.lon         = $lon,
@@ -121,8 +121,10 @@ async def listen_to_control_stream():
                         data_str = line[5:].strip()
                         payload = json.loads(data_str)
                         if payload.get("command") == "SHUTDOWN":
-                            print(f"[!!!] SHUTDOWN command received by replica {REPLICA_ID}. Terminating now.")
-                            os._exit(1)
+                            msg = f"\n{'='*80}\n[CRASH] Replica {REPLICA_ID} received SHUTDOWN command - Terminating.\n{'='*80}\n"
+                            print(msg, file=sys.stderr, flush=True)
+                            print(f"[!!!] SHUTDOWN command received by replica {REPLICA_ID}. Terminating now.", flush=True)
+                            sys.exit(1)
         except Exception as e:
             print(f"[!] Control stream error: {e}. Retrying in 5s...")
             await asyncio.sleep(5)
