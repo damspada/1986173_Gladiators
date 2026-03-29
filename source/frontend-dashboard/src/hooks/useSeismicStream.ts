@@ -33,6 +33,34 @@ interface RawHistoryPayload {
   sensor?: SensorMeta
 }
 
+const resolveSocketUrl = (socketUrl?: string): string | undefined => {
+  const trimmedUrl = socketUrl?.trim()
+  if (!trimmedUrl) {
+    return undefined
+  }
+
+  if (trimmedUrl.startsWith('ws://') || trimmedUrl.startsWith('wss://')) {
+    return trimmedUrl
+  }
+
+  if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+    try {
+      const parsedUrl = new URL(trimmedUrl)
+      parsedUrl.protocol = parsedUrl.protocol === 'https:' ? 'wss:' : 'ws:'
+      return parsedUrl.toString()
+    } catch {
+      return trimmedUrl
+    }
+  }
+
+  if (trimmedUrl.startsWith('/')) {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${protocol}//${window.location.host}${trimmedUrl}`
+  }
+
+  return trimmedUrl
+}
+
 const buildEventKey = (payload: RawStreamPayload): string => {
   const roundedFreq = payload.frequency.toFixed(2)
   return `${payload.sensor_id}:${payload.timestamp}:${roundedFreq}`
@@ -109,7 +137,7 @@ export const useSeismicStream = ({
   historyBootstrapUrl,
   historyBootstrapLimit = 50,
 }: UseSeismicStreamOptions): StreamSnapshot & { forceReconnect: () => void } => {
-  const normalizedSocketUrl = socketUrl?.trim()
+  const normalizedSocketUrl = resolveSocketUrl(socketUrl)
   const normalizedHistoryUrl = historyBootstrapUrl?.trim()
   const hasConfiguredSocketUrl = Boolean(normalizedSocketUrl)
 
