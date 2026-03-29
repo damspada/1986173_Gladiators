@@ -5,12 +5,11 @@ info:
 
 http:
   method: GET
-  url: http://localhost:8080/api/control
-  auth: inherit
+  url: http://localhost:{{simulator_port}}/api/control
   headers:
     - name: Accept
       value: text/event-stream
-      enabled: true
+  auth: inherit
 
 settings:
   encodeUrl: true

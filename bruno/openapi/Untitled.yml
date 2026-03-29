@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: http://localhost:8080/openapi.json
+  url: http://localhost:{{simulator_port}}/openapi.json
   auth: inherit
 
 settings:

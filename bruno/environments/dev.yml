@@ -1,0 +1,4 @@
+name: dev
+variables:
+  - name: simulator_port
+    value: "9090"
