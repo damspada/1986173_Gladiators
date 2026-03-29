@@ -1,14 +1,11 @@
 info:
-  name: Control Stream (SSE)
+  name: Get Replica Disconnections
   type: http
   seq: 5
 
 http:
   method: GET
-  url: http://localhost:{{simulator_port}}/api/control
-  headers:
-    - name: Accept
-      value: text/event-stream
+  url: http://localhost:{{backend_port}}/api/replicas/d0d7fefeedcf/disconnections
   auth: inherit
 
 settings:

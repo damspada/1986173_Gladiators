@@ -9,6 +9,7 @@ services:
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
       SIMULATOR_BASE_URL: http://simulator:8080
+      BROKER_WS_URL: ws://broker:9090/backend/ws
     networks:
       - gladiators-net
 

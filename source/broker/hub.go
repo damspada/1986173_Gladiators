@@ -66,9 +66,15 @@ func (h *Hub) handleSSE(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
+	// usa l'ID fornito dalla replica; fallback all'indirizzo IP se assente
+	replicaID := r.Header.Get("X-Replica-ID")
+	if replicaID == "" {
+		replicaID = r.RemoteAddr
+	}
+
 	// crea il client per questa replica
 	client := &Client{
-		id:      r.RemoteAddr, // usiamo l'indirizzo IP come ID
+		id:      replicaID,
 		channel: make(chan []byte, 100),
 	}
 

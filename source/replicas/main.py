@@ -16,7 +16,7 @@ SIMULATOR_URL = os.getenv("SIMULATOR_URL", "http://simulator:8080")
 BROKER_URL = os.getenv("BROKER_URL", "http://broker:9090/stream")
 
 # Global HTTP client for the control stream
-http_client = httpx.AsyncClient()
+http_client = httpx.AsyncClient(headers={"X-Replica-ID": REPLICA_ID})
 
 async def listen_to_broker(app):
     """

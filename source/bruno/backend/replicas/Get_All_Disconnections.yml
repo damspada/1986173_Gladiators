@@ -1,11 +1,11 @@
 info:
-  name: Manual Shutdown
+  name: Get All Disconnections
   type: http
-  seq: 7
+  seq: 4
 
 http:
-  method: POST
-  url: http://localhost:{{simulator_port}}/api/admin/shutdown
+  method: GET
+  url: http://localhost:{{backend_port}}/api/replicas/disconnections
   auth: inherit
 
 settings:
