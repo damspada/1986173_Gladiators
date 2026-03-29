@@ -1,6 +1,7 @@
 import os
 import asyncio
 import hashlib
+from datetime import datetime, timezone
 from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import TransientError, DatabaseError
 
@@ -48,7 +49,7 @@ MERGE (sensor)-[:LOCATED_IN]->(region)
 
 MERGE (event:SeismicEvent {eventId: $event_id})
 ON CREATE SET
-    event.timestamp      = datetime($timestamp),
+    event.timestamp      = $timestamp,
     event.frequency      = $frequency,
     event.classification = $classification,
     event.sensorId       = $sensor_id,
@@ -67,7 +68,7 @@ FOREACH (_ IN CASE WHEN $classification = 'NUCLEAR_EVENT'          THEN [1] ELSE
 MERGE (event)-[:OCCURRED_IN]->(region)
 MERGE (sensor)-[:DETECTED]->(event)
 MERGE (replica)-[reported:REPORTED]->(event)
-ON CREATE SET reported.detectedAt = datetime($timestamp)
+ON CREATE SET reported.detectedAt = $timestamp
 
 // Majority confirmation: count all replicas that have REPORTED this event.
 // Once the count reaches the majority threshold, stamp the event as confirmed
@@ -139,12 +140,14 @@ class Neo4jRepository:
             f"Frequency: {event['dominant_frequency']} Hz — saving to Neo4j..."
         )
 
+        ts = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+
         async with self._driver.session() as session:
             await session.run(
                 _SAVE_EVENT_QUERY,
                 event_id=unique_id,
                 sensor_id=event["sensor_id"],
-                timestamp=timestamp,
+                timestamp=ts,
                 frequency=event["dominant_frequency"],
                 classification=event["event_type"],
                 lat=metadata.get("lat", 0.0),
