@@ -6,12 +6,13 @@ interface LiveDashboardPageProps {
   sensors: SensorMeta[]
   events: SeismicEvent[]
   onSelectEvent: (event: SeismicEvent) => void
+  onOpenSensor: (sensorId: string) => void
 }
 
-export const LiveDashboardPage = ({ sensors, events, onSelectEvent }: LiveDashboardPageProps) => {
+export const LiveDashboardPage = ({ sensors, events, onSelectEvent, onOpenSensor }: LiveDashboardPageProps) => {
   return (
     <section className="space-y-4">
-      <SensorGridMap sensors={sensors} latestEvents={events} onSelectEvent={onSelectEvent} />
+      <SensorGridMap sensors={sensors} latestEvents={events} onSelectSensor={onOpenSensor} />
       <LiveEventFeed events={events} onSelectEvent={onSelectEvent} />
     </section>
   )

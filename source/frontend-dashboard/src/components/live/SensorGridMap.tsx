@@ -1,16 +1,18 @@
 import { divIcon, latLngBounds, type LatLngTuple } from 'leaflet'
-import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet'
+import { useEffect, useRef, useState } from 'react'
+import { Circle, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import type { SeismicEvent, SensorMeta } from '../../types/seismic'
 
 interface SensorGridMapProps {
   sensors: SensorMeta[]
   latestEvents: SeismicEvent[]
-  onSelectEvent?: (event: SeismicEvent) => void
+  onSelectSensor?: (sensorId: string) => void
 }
 
 const DEFAULT_CENTER: LatLngTuple = [20, 0]
 const DEFAULT_ZOOM = 2
 const WORLD_BOUNDS: [LatLngTuple, LatLngTuple] = [[-85, -180], [85, 180]]
+const MAP_IDLE_RESET_MS = 5000
 
 const CLASS_COLOR: Record<SeismicEvent['classification'], string> = {
   EARTHQUAKE: 'eq',
@@ -18,13 +20,70 @@ const CLASS_COLOR: Record<SeismicEvent['classification'], string> = {
   NUCLEAR_LIKE: 'nuc',
 }
 
+const CLASS_HEX: Record<SeismicEvent['classification'], string> = {
+  EARTHQUAKE: '#22d3ee',
+  CONVENTIONAL_EXPLOSION: '#f59e0b',
+  NUCLEAR_LIKE: '#e11d48',
+}
+
 const SensorBounds = ({ sensors }: { sensors: SensorMeta[] }) => {
   const map = useMap()
+  const resetTimerRef = useRef<number | null>(null)
+  const hasInitialFitRef = useRef(false)
+  const skipNextIdleScheduleRef = useRef(false)
 
-  if (sensors.length > 0) {
-    const bounds = latLngBounds(sensors.map((sensor) => [sensor.lat, sensor.long] as LatLngTuple))
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 5 })
-  }
+  useEffect(() => {
+    if (sensors.length === 0) {
+      return
+    }
+
+    if (!hasInitialFitRef.current) {
+      const bounds = latLngBounds(sensors.map((sensor) => [sensor.lat, sensor.long] as LatLngTuple))
+      skipNextIdleScheduleRef.current = true
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 5, animate: false })
+      hasInitialFitRef.current = true
+    }
+  }, [map, sensors])
+
+  useEffect(() => {
+    const clearResetTimer = () => {
+      if (resetTimerRef.current !== null) {
+        window.clearTimeout(resetTimerRef.current)
+        resetTimerRef.current = null
+      }
+    }
+
+    const scheduleReset = () => {
+      if (sensors.length === 0) {
+        return
+      }
+
+      if (skipNextIdleScheduleRef.current) {
+        skipNextIdleScheduleRef.current = false
+        return
+      }
+
+      clearResetTimer()
+      resetTimerRef.current = window.setTimeout(() => {
+        const bounds = latLngBounds(sensors.map((sensor) => [sensor.lat, sensor.long] as LatLngTuple))
+        skipNextIdleScheduleRef.current = true
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 5, animate: true })
+      }, MAP_IDLE_RESET_MS)
+    }
+
+    map.on('zoomstart', clearResetTimer)
+    map.on('movestart', clearResetTimer)
+    map.on('zoomend', scheduleReset)
+    map.on('moveend', scheduleReset)
+
+    return () => {
+      clearResetTimer()
+      map.off('zoomstart', clearResetTimer)
+      map.off('movestart', clearResetTimer)
+      map.off('zoomend', scheduleReset)
+      map.off('moveend', scheduleReset)
+    }
+  }, [map, sensors])
 
   return null
 }
@@ -32,21 +91,55 @@ const SensorBounds = ({ sensors }: { sensors: SensorMeta[] }) => {
 const buildSensorIcon = (isHot: boolean, tone: string) => {
   return divIcon({
     className: 'sensor-marker-wrapper',
-    html: `<span class="sensor-marker ${tone} ${isHot ? 'is-hot' : ''}"></span>`,
+    html: `<span class="sensor-marker ${tone} ${isHot ? `is-hot is-hot-${tone}` : ''}"></span>`,
     iconSize: [16, 16],
     iconAnchor: [8, 8],
   })
 }
 
-export const SensorGridMap = ({ sensors, latestEvents, onSelectEvent }: SensorGridMapProps) => {
+export const SensorGridMap = ({ sensors, latestEvents, onSelectSensor }: SensorGridMapProps) => {
+  const [nowMs, setNowMs] = useState(() => Date.now())
   const hotSensors = new Set(latestEvents.slice(0, 20).map((event) => event.sensor_id))
   const latestBySensor = new Map<string, SeismicEvent>()
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowMs(Date.now())
+    }, 900)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [])
 
   for (const event of latestEvents) {
     if (!latestBySensor.has(event.sensor_id)) {
       latestBySensor.set(event.sensor_id, event)
     }
   }
+
+  const sensorById = new Map(sensors.map((sensor) => [sensor.sensor_id, sensor]))
+  const trailingEvents = latestEvents
+    .slice(0, 80)
+    .map((event) => {
+      const timestampMs = Date.parse(event.timestamp)
+      const ageMs = Number.isNaN(timestampMs) ? Number.POSITIVE_INFINITY : nowMs - timestampMs
+      const sensor = event.sensor ?? sensorById.get(event.sensor_id)
+      return {
+        event,
+        ageMs,
+        sensor,
+      }
+    })
+    .filter(
+      (
+        entry,
+      ): entry is {
+        event: SeismicEvent
+        ageMs: number
+        sensor: SensorMeta
+      } => Boolean(entry.sensor) && entry.ageMs >= 0 && entry.ageMs <= 40_000,
+    )
 
   return (
     <section className="tactical-panel relative min-h-[20rem] overflow-hidden p-4">
@@ -56,6 +149,12 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectEvent }: SensorGr
       </div>
 
       <div className="relative z-10 h-[16.5rem] rounded-sm border border-zinc-700/80 bg-zinc-950/70">
+        <div className="map-radar-overlay" aria-hidden="true">
+          <span className="map-radar-sweep" />
+          <span className="map-radar-ring map-radar-ring--one" />
+          <span className="map-radar-ring map-radar-ring--two" />
+        </div>
+
         {sensors.length === 0 ? (
           <div className="flex h-full items-center justify-center text-sm uppercase tracking-[0.2em] text-zinc-500">
             Waiting for sensor telemetry...
@@ -77,6 +176,28 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectEvent }: SensorGr
 
             <SensorBounds sensors={sensors} />
 
+            {trailingEvents.map(({ event, ageMs, sensor }) => {
+              const fade = 1 - ageMs / 40_000
+              const radius = 35_000 + fade * 220_000
+              const color = CLASS_HEX[event.classification]
+
+              return (
+                <Circle
+                  key={`${event.event_id}:${Math.floor(ageMs / 1000)}`}
+                  center={[sensor.lat, sensor.long]}
+                  radius={radius}
+                  pathOptions={{
+                    color,
+                    opacity: 0.08 + fade * 0.45,
+                    fillColor: color,
+                    fillOpacity: 0.02 + fade * 0.12,
+                    weight: event.classification === 'NUCLEAR_LIKE' ? 2 : 1,
+                  }}
+                  interactive={false}
+                />
+              )
+            })}
+
             {sensors.map((sensor) => {
               const event = latestBySensor.get(sensor.sensor_id)
               const tone = event ? CLASS_COLOR[event.classification] : 'eq'
@@ -87,13 +208,9 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectEvent }: SensorGr
                   key={sensor.sensor_id}
                   position={[sensor.lat, sensor.long]}
                   icon={buildSensorIcon(isHot, tone)}
-                  eventHandlers={
-                    event
-                      ? {
-                          click: () => onSelectEvent?.(event),
-                        }
-                      : undefined
-                  }
+                  eventHandlers={{
+                    click: () => onSelectSensor?.(sensor.sensor_id),
+                  }}
                 >
                   <Tooltip direction="top" offset={[0, -10]} opacity={0.95} className="sensor-map-tooltip">
                     <div className="text-[10px] uppercase tracking-[0.14em]">

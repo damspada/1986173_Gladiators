@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { useMemo } from 'react'
 import { divIcon, type LatLngTuple } from 'leaflet'
+import { SensorNavLink } from './SensorNavLink'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import { classificationBadgeClass, classificationLabel } from '../../utils/classification'
 import { formatFrequency, formatUtcTimestamp } from '../../utils/format'
@@ -32,12 +33,14 @@ export const EventDetailsModal = ({ event, onClose }: EventDetailsModalProps) =>
   }
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-3 py-4 backdrop-blur-[1px]">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 px-3 py-4 backdrop-blur-[1px]">
       <div className="tactical-panel w-[min(96vw,44rem)] border-zinc-600/80 bg-zinc-950/95 p-4">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-400">Event Detail</p>
-            <h3 className="mt-1 text-sm uppercase tracking-[0.18em] text-zinc-100">Sensor {event.sensor_id}</h3>
+            <h3 className="mt-1 text-sm uppercase tracking-[0.18em] text-zinc-100">
+              Sensor <SensorNavLink sensorId={event.sensor_id} className="text-zinc-100 hover:text-cyan-200" />
+            </h3>
           </div>
           <button
             type="button"

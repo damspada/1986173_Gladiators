@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { SensorNavLink } from '../common/SensorNavLink'
 import { classificationBadgeClass, classificationLabel } from '../../utils/classification'
 import { formatFrequency, formatUtcTimestamp } from '../../utils/format'
 import type { SeismicEvent } from '../../types/seismic'
@@ -44,7 +45,9 @@ export const HistoryTable = ({ events, loading, error, onSelectEvent }: HistoryT
                   }
                 }}
               >
-                <span className="font-medium text-zinc-100">{event.sensor_id}</span>
+                <span className="font-medium text-zinc-100">
+                  <SensorNavLink sensorId={event.sensor_id} className="px-0 py-0 text-zinc-100 hover:text-cyan-200" />
+                </span>
                 <span className="text-zinc-400">{formatUtcTimestamp(event.timestamp)}</span>
                 <span>{formatFrequency(event.frequency)}</span>
                 <span

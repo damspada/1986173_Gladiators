@@ -49,6 +49,120 @@ body {
     0 18px 30px rgba(0, 0, 0, 0.35);
 }
 
+@keyframes liveRowEnter {
+  0% {
+    transform: translateY(-12px);
+    opacity: 0;
+    filter: saturate(1.4);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: saturate(1);
+  }
+}
+
+@keyframes liveThreatPulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 0 999px var(--threat-glow);
+  }
+}
+
+.live-feed-row {
+  --threat-glow: rgba(34, 211, 238, 0.04);
+}
+
+.live-feed-row.threat-earthquake {
+  --threat-glow: rgba(34, 211, 238, 0.05);
+}
+
+.live-feed-row.threat-explosion {
+  --threat-glow: rgba(245, 158, 11, 0.06);
+}
+
+.live-feed-row.threat-nuclear {
+  --threat-glow: rgba(225, 29, 72, 0.09);
+}
+
+.live-feed-row--fresh {
+  animation:
+    liveRowEnter 340ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards,
+    liveThreatPulse 2s ease-in-out 80ms 2;
+}
+
+@keyframes routeDecryptIn {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.88);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes routeLabelFlicker {
+  0%,
+  100% {
+    opacity: 0.92;
+    text-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
+  }
+  35% {
+    opacity: 0.72;
+    text-shadow:
+      0 0 14px rgba(225, 29, 72, 0.36),
+      -2px 0 rgba(34, 211, 238, 0.2);
+  }
+  63% {
+    opacity: 1;
+    text-shadow: 0 0 16px rgba(34, 211, 238, 0.5);
+  }
+}
+
+.route-content {
+  flex: 1;
+  transition: filter 200ms ease, opacity 200ms ease;
+}
+
+.route-content--transitioning {
+  opacity: 0.78;
+  filter: blur(1px) saturate(0.82);
+}
+
+.route-decrypt-overlay {
+  position: absolute;
+  inset: 4.9rem 1.25rem auto 1.25rem;
+  z-index: 35;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  animation: routeDecryptIn 160ms ease-out;
+}
+
+.route-decrypt-label {
+  border: 1px solid rgba(34, 211, 238, 0.55);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(20, 28, 32, 0.92),
+      rgba(20, 28, 32, 0.92) 3px,
+      rgba(30, 40, 44, 0.88) 3px,
+      rgba(30, 40, 44, 0.88) 4px
+    );
+  color: #67e8f9;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  animation: routeLabelFlicker 0.46s steps(2, end) infinite;
+}
+
 @keyframes sensorPulse {
   0% {
     transform: scale(1);
@@ -131,6 +245,79 @@ body {
   animation: sensorPulse 1.5s ease-out infinite;
 }
 
+.sensor-marker.is-hot-eq::after {
+  animation-duration: 1.7s;
+  opacity: 0.58;
+}
+
+.sensor-marker.is-hot-exp::after {
+  animation-duration: 1.2s;
+  opacity: 0.68;
+}
+
+.sensor-marker.is-hot-nuc::after {
+  animation-duration: 0.9s;
+  opacity: 0.84;
+  box-shadow: 0 0 28px rgba(225, 29, 72, 0.8);
+}
+
+.map-radar-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 390;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.map-radar-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 58%;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(103, 232, 249, 0.1);
+}
+
+.map-radar-ring--one {
+  width: 34%;
+}
+
+.map-radar-ring--two {
+  width: 70%;
+  border-color: rgba(103, 232, 249, 0.08);
+}
+
+@keyframes radarSweep {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.map-radar-sweep {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 88%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background:
+    conic-gradient(
+      from 0deg,
+      rgba(34, 211, 238, 0) 0deg,
+      rgba(34, 211, 238, 0.03) 312deg,
+      rgba(34, 211, 238, 0.3) 338deg,
+      rgba(34, 211, 238, 0.06) 360deg
+    );
+  mix-blend-mode: screen;
+  animation: radarSweep 6.5s linear infinite;
+}
+
 .sensor-map-tooltip {
   background: rgba(10, 12, 14, 0.95);
   color: #f3f4f6;
@@ -146,5 +333,16 @@ body {
 @media (max-width: 900px) {
   body {
     font-size: 14px;
+  }
+
+  .route-decrypt-overlay {
+    inset: 6rem 0.75rem auto 0.75rem;
+  }
+
+  .route-decrypt-label {
+    width: 100%;
+    text-align: center;
+    font-size: 0.58rem;
+    letter-spacing: 0.17em;
   }
 }

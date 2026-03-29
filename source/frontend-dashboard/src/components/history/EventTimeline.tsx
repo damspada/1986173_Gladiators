@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import { type MouseEvent as ReactMouseEvent, type WheelEvent as ReactWheelEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { SensorNavLink } from '../common/SensorNavLink'
 import { classificationLabel } from '../../utils/classification'
 import { formatUtcTimestamp } from '../../utils/format'
 import type { SeismicEvent } from '../../types/seismic'
@@ -337,7 +338,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
                   className="flex items-center border-b border-zinc-800/70 px-3 text-[11px] uppercase tracking-[0.14em] text-zinc-200"
                   style={{ height: `${ROW_HEIGHT}px` }}
                 >
-                  {sensorId}
+                  <SensorNavLink sensorId={sensorId} className="px-0 py-0 text-zinc-200 hover:text-cyan-200" />
                 </div>
               ))}
             </div>
@@ -391,7 +392,9 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
                         <span className="pointer-events-none absolute inset-0 animate-pulse rounded-full border border-current opacity-35" />
 
                         <div className="pointer-events-none absolute -top-2 left-1/2 z-10 hidden w-64 -translate-x-1/2 -translate-y-full rounded-sm border border-zinc-600 bg-zinc-950/95 p-2 text-[11px] tracking-[0.04em] text-zinc-200 shadow-[0_12px_24px_rgba(0,0,0,0.55)] group-hover:block">
-                          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">{event.sensor_id}</p>
+                          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">
+                            <SensorNavLink sensorId={event.sensor_id} className="px-0 py-0 text-zinc-300 hover:text-cyan-200" />
+                          </p>
                           <p className="mt-1">Type: {classificationLabel[event.classification]}</p>
                           <p>Frequency: {event.frequency.toFixed(2)} Hz</p>
                           <p>Amplitude: {event.amplitude?.toFixed(2) ?? 'N/A'}</p>
