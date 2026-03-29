@@ -1,6 +1,9 @@
 # Use an official Python runtime as a parent image
 FROM python:3.10-slim
 
+# Disable stdout/stderr buffering so print() output appears immediately in Docker logs
+ENV PYTHONUNBUFFERED=1
+
 # Set the working directory in the container
 WORKDIR /app
 

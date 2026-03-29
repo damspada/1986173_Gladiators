@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:8080/api/admin/sensors/sensor-01/events
+  url: http://localhost:{{simulator_port}}/api/admin/sensors/sensor-02/events
   body:
     type: json
     data: |-

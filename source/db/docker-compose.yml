@@ -7,9 +7,20 @@ services:
       - "7687:7687"
     environment:
       NEO4J_AUTH: neo4j/password
+      # On every browser connection, automatically load the custom GraSS stylesheet
+      # served by the backend (localhost:8081 is the host-side port for the backend container).
+      # Naming: browser.post_connect_cmd → NEO4J_browser_post__connect__cmd
+      # (dots → single _, underscores in key → double __)
+      NEO4J_browser_post__connect__cmd: "style http://localhost:8081/browser.grass"
     volumes:
       - neo4j-data:/data
       - ./init:/var/lib/neo4j/import
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
     networks:
       - gladiators-net
 

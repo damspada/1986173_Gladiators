@@ -3,34 +3,26 @@ import sys
 import json
 import asyncio
 import httpx
-import hashlib
 import socket
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from analyzer import SeismicAnalyzer
-from neo4j import AsyncGraphDatabase
+from neo4j_repository import create_repository
 
 REPLICA_ID = socket.gethostname()
 
 # Environment variables for service discovery and communication
 SIMULATOR_URL = os.getenv("SIMULATOR_URL", "http://simulator:8080")
 BROKER_URL = os.getenv("BROKER_URL", "http://broker:9090/stream")
-NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
-NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
 
 # Global HTTP client for the control stream
 http_client = httpx.AsyncClient()
-
-# Neo4j async driver (initialized in lifespan)
-neo4j_driver = None
 
 async def listen_to_broker(app):
     """
     Consumes the SSE (Server-Sent Events) stream from the Internal Broker.
     """
     print(f"[*] Broker URL  : {BROKER_URL}")
-    print(f"[*] Neo4j URI   : {NEO4J_URI}")
     print(f"[*] Simulator   : {SIMULATOR_URL}")
 
     messages_received = 0
@@ -57,54 +49,23 @@ async def listen_to_broker(app):
 
                             if event:
                                 events_detected += 1
-                                await handle_detection(event, msg['timestamp'], msg)
+                                await handle_detection(app, event, msg['timestamp'], msg)
 
                         except (json.JSONDecodeError, KeyError) as e:
                             print(f"[!] Malformed message from broker: {e} — raw: {line[:120]}")
+                            continue
+                        except Exception as e:
+                            print(f"[!] Error processing event: {e}")
                             continue
         except Exception as e:
             print(f"[!] Connection lost to broker: {e}. Retrying in 5s...")
             await asyncio.sleep(5)
 
-async def handle_detection(event, timestamp, metadata):
+async def handle_detection(app, event, timestamp, metadata):
     """
-    Persists a detected seismic event directly into Neo4j.
-    Uses MERGE on event_id to ensure idempotency across replicas.
+    Delegates persistence of a detected seismic event to the Neo4j repository.
     """
-    # Deterministic MD5 hash — same event detected by multiple replicas produces same ID
-    unique_id = hashlib.md5(f"{event['sensor_id']}-{timestamp[:16]}".encode()).hexdigest()
-
-    print(f"[ALERT] {event['event_type']} detected by {event['sensor_id']}! "
-          f"Frequency: {event['dominant_frequency']} Hz — saving to Neo4j...")
-
-    print(f"Event details: {event}")
-
-    try:
-        async with neo4j_driver.session() as session:
-            await session.run(
-                """
-                MERGE (e:SeismicEvent {eventId: $event_id})
-                ON CREATE SET
-                    e.sensorId    = $sensor_id,
-                    e.timestamp   = $timestamp,
-                    e.frequency   = $frequency,
-                    e.classification = $classification,
-                    e.lat         = $lat,
-                    e.lon         = $lon,
-                    e.region      = $region
-                """,
-                event_id=unique_id,
-                sensor_id=event["sensor_id"],
-                timestamp=timestamp,
-                frequency=event["dominant_frequency"],
-                classification=event["event_type"],
-                lat=metadata.get("lat", 0.0),
-                lon=metadata.get("lon", 0.0),
-                region=metadata.get("region", ""),
-            )
-        print(f"[OK] Event {unique_id} saved.")
-    except Exception as e:
-        print(f"[!] Failed to save event to Neo4j: {e}")
+    await app.state.repo.save_seismic_event(event, timestamp, metadata)
 
 async def listen_to_control_stream():
     """
@@ -124,7 +85,7 @@ async def listen_to_control_stream():
                             msg = f"\n{'='*80}\n[CRASH] Replica {REPLICA_ID} received SHUTDOWN command - Terminating.\n{'='*80}\n"
                             print(msg, file=sys.stderr, flush=True)
                             print(f"[!!!] SHUTDOWN command received by replica {REPLICA_ID}. Terminating now.", flush=True)
-                            sys.exit(1)
+                            os._exit(1)
         except Exception as e:
             print(f"[!] Control stream error: {e}. Retrying in 5s...")
             await asyncio.sleep(5)
@@ -135,18 +96,8 @@ async def lifespan(app: FastAPI):
     Manages the lifecycle of the FastAPI application.
     Starts background tasks upon startup and cleans up upon shutdown.
     """
-    global neo4j_driver
     print(f"[*] Initializing replica {REPLICA_ID}...")
-    print(f"[*] Connecting to Neo4j at {NEO4J_URI}...")
-    neo4j_driver = AsyncGraphDatabase.driver(
-        NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD)
-    )
-    # Verify connectivity immediately so failures are visible at startup
-    try:
-        await neo4j_driver.verify_connectivity()
-        print(f"[*] Neo4j connection OK.")
-    except Exception as e:
-        print(f"[!] Neo4j connection FAILED: {e}")
+    app.state.repo = await create_repository(REPLICA_ID)
 
     # Initialize the analyzer (Default sampling rate is 20Hz as per DOCKER_CONTRACT.md)
     app.state.analyzer = SeismicAnalyzer(sampling_rate=20.0)
@@ -161,7 +112,7 @@ async def lifespan(app: FastAPI):
     # Cleanup: cancel tasks, close driver and HTTP client
     broker_task.cancel()
     control_task.cancel()
-    await neo4j_driver.close()
+    await app.state.repo.close()
     await http_client.aclose()
 
 app = FastAPI(lifespan=lifespan)
