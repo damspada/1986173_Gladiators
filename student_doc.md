@@ -28,7 +28,7 @@
 22. As a System Administrator, I want to verify backend connectivity status so I can validate deployment health during startup.
 23. As a System Administrator, I want to receive visual alerts when a replica goes down or enters degraded state so I can respond quickly to failures.
 24. As a System Administrator, I want to download system metrics (uptime, reconnects, CPU/memory if available) so I can feed them into monitoring dashboards.
-25. As a System Administrator, I want a "Check Now" button that forces an immediate health status refresh so I can verify fixes without waiting for polling interval.
+25. As a System Administrator,  I want the health status to be continuously updated via WebSocket so I can monitor fixes in real time.
 
 # CONTAINERS:
 
@@ -43,6 +43,7 @@ Manages sensor ingestion and internal event bus. It receives sensor telemetry, v
 5. As an Operator, I want to click on a sensor to see its recent events and status so I can investigate specific locations.
 7. As an Operator, I want to set custom frequency thresholds that trigger visual/audio alerts so I can focus on high-priority detections.
 9. As a Data Analyst, I want to filter history by event type (EARTHQUAKE/EXPLOSION/NUCLEAR) so I can analyze specific seismic phenomena.
+25. As a System Administrator,  I want the health status to be continuously updated via WebSocket so I can monitor fixes in real time.
 
 ### PORTS: 
 9090:9090
@@ -91,6 +92,7 @@ Processes events to classify type, apply rules and produce consensus output. It 
 21. As a System Administrator, I want to know approximate lost events count so I can assess data integrity.
 22. As a System Administrator, I want to verify backend connectivity status so I can validate deployment health during startup.
 23. As a System Administrator, I want to receive visual alerts when a replica goes down or enters degraded state so I can respond quickly to failures.
+25. As a System Administrator,  I want the health status to be continuously updated via WebSocket so I can monitor fixes in real time.
 
 ### PORTS: 
 8090:8090
@@ -138,6 +140,7 @@ Provides aggregated endpoints for dashboard and analytics clients. Serves sensor
 12. As a Data Analyst, I want to download filtered results as CSV so I can perform advanced statistical analysis in external tools.
 13. As a Data Analyst, I want to see events plotted on a timeline so I can identify temporal clustering and event sequences.
 16. As a Data Analyst, I want to see frequency distribution charts (e.g., how many EARTHQUAKEs per region) so I can identify spatial-temporal patterns.
+25. As a System Administrator,  I want the health status to be continuously updated via WebSocket so I can monitor fixes in real time.
 
 ### PORTS: 
 8080:8080
@@ -168,6 +171,7 @@ The service uses Spring Boot controllers for endpoints, repositories for databas
     | GET | /events | Retrieve filtered event list | 8, 10-13, 16 |
     | GET | /sensors | Get sensor metadata | 1, 5 |
     | GET | /replicas | Get replica statuses | 3, 18-23 |
+    | WS | /health/ws | WebSocket for continuous health status updates | 25 |
 
 - DB STRUCTURE: 
 

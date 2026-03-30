@@ -52,7 +52,7 @@
 
 24. As a System Administrator, I want to download system metrics (uptime, reconnects, CPU/memory if available) so I can feed them into monitoring dashboards.
 
-25. As a System Administrator, I want a "Check Now" button that forces an immediate health status refresh so I can verify fixes without waiting for polling interval.
+25. As a System Administrator,  I want the health status to be continuously updated via WebSocket so I can monitor fixes in real time.
 
 # EVENT MODEL AND RULE MODEL
 
