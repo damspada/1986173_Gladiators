@@ -28,9 +28,7 @@ import { playAlertTone } from './utils/alertAudio'
 const LIVE_SOCKET_URL = (import.meta.env.VITE_LIVE_WS_URL as string | undefined)?.trim()
 const LIVE_HISTORY_URL = (import.meta.env.VITE_HISTORY_API_URL as string | undefined)?.trim()
 const FRONTEND_VERSION = import.meta.env.VITE_FRONTEND_VERSION || '0.0.0'
-const BUILD_COMMIT = import.meta.env.VITE_BUILD_COMMIT || 'unknown'
 const BUILD_TIMESTAMP = import.meta.env.VITE_BUILD_TIMESTAMP || new Date().toISOString()
-const BACKEND_IMAGE_TAG = import.meta.env.VITE_BACKEND_IMAGE_TAG || 'untracked'
 const DECRYPT_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#?*'
 const THEME_STORAGE_KEY = 'gsm-theme-preferences-v1'
 
@@ -389,9 +387,9 @@ const AppFrame = () => {
         open={showAbout}
         onClose={() => setShowAbout(false)}
         frontendVersion={FRONTEND_VERSION}
-        commitHash={BUILD_COMMIT}
-        backendImageTag={BACKEND_IMAGE_TAG}
         buildTimestamp={BUILD_TIMESTAMP}
+        liveWsUrl={LIVE_SOCKET_URL}
+        historyApiUrl={LIVE_HISTORY_URL}
       />
     </div>
   )

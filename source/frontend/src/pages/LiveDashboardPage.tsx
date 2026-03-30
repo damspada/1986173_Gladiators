@@ -80,9 +80,11 @@ export const LiveDashboardPage = ({
           <section className="tactical-panel p-3">
             <Link
               to="/infrastructure"
-              className="text-[11px] uppercase tracking-[0.2em] text-zinc-300 hover:text-cyan-200 transition-colors"
+              className="group inline-flex items-center gap-2 rounded-sm border border-zinc-600/90 bg-zinc-900/70 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-zinc-200 transition hover:border-cyan-400/80 hover:bg-cyan-500/10 hover:text-cyan-200"
+              aria-label="Open infrastructure page"
             >
-              Infrastructure
+              <span>Infrastructure</span>
+              <span className="text-zinc-500 transition group-hover:text-cyan-300">Open -&gt;</span>
             </Link>
             <div className="mt-2 space-y-1 text-[11px] uppercase tracking-[0.1em] text-zinc-300">
               <p>Replicas: <span className="text-zinc-100">{healthyReplicas}/{totalReplicas}</span></p>
@@ -174,27 +176,27 @@ export const LiveDashboardPage = ({
             </div>
           </section>
 
-          <section className="tactical-panel p-3">
+          <section className="region-incidents-panel tactical-panel p-3">
             <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-[0.16em] text-zinc-400">
               <span>Region Incidents</span>
               <span>{regionIncidents.length}</span>
             </div>
             {latestRegionIncident ? (
-              <div className="mb-2 rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-2 py-2 text-xs">
+              <div className="region-incident-card region-incident-card--latest mb-2 rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-2 py-2 text-xs">
                 <p className="uppercase tracking-[0.08em] text-zinc-200">
                   Latest:{' '}
                   <ZoneNavLink zone={latestRegionIncident.region} className="px-0 py-0 text-zinc-200 hover:text-cyan-200" />
                 </p>
-                <p className="mt-1 text-zinc-400">{latestRegionIncident.count} events | {classificationLabel[latestRegionIncident.severity]}</p>
+                <p className="region-incident-meta mt-1 text-zinc-400">{latestRegionIncident.count} events | {classificationLabel[latestRegionIncident.severity]}</p>
               </div>
             ) : null}
             <div className="max-h-[16rem] space-y-2 overflow-y-auto pr-1 text-xs">
               {regionIncidents.slice(0, 8).map((region) => (
-                <div key={region.id} className="rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-2 py-2">
+                <div key={region.id} className="region-incident-card rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-2 py-2">
                   <p className="uppercase tracking-[0.08em] text-zinc-200">
                     <ZoneNavLink zone={region.region} className="px-0 py-0 text-zinc-200 hover:text-cyan-200" />
                   </p>
-                  <p className="mt-1 text-zinc-400">{region.count} events | {classificationLabel[region.severity]}</p>
+                  <p className="region-incident-meta mt-1 text-zinc-400">{region.count} events | {classificationLabel[region.severity]}</p>
                 </div>
               ))}
               {regionIncidents.length === 0 ? <p className="text-zinc-500">No aggregated incidents.</p> : null}

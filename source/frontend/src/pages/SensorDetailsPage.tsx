@@ -828,45 +828,6 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
       </section>
 
       <section className="tactical-panel p-4">
-        <div className="grid gap-4 md:grid-cols-2 mb-4">
-          <div>
-            <p className="mb-2 text-[10px] uppercase tracking-[0.16em] text-zinc-400">Primary: {sensorId}</p>
-            <div className="grid grid-cols-3 gap-1 text-center">
-              <div className="rounded-sm border border-cyan-600/50 bg-cyan-500/10 p-2">
-                <p className="text-[9px] text-cyan-300">EQK</p>
-                <p className="mt-1 text-sm font-semibold text-cyan-200">{primarySnapshot.classificationCounts.EARTHQUAKE}</p>
-              </div>
-              <div className="rounded-sm border border-amber-600/50 bg-amber-500/10 p-2">
-                <p className="text-[9px] text-amber-300">EXP</p>
-                <p className="mt-1 text-sm font-semibold text-amber-200">{primarySnapshot.classificationCounts.CONVENTIONAL_EXPLOSION}</p>
-              </div>
-              <div className="rounded-sm border border-rose-600/50 bg-rose-500/10 p-2">
-                <p className="text-[9px] text-rose-300">NUC</p>
-                <p className="mt-1 text-sm font-semibold text-rose-200">{primarySnapshot.classificationCounts.NUCLEAR_LIKE}</p>
-              </div>
-            </div>
-          </div>
-          {compareSensorId && compareSnapshot.eventCount > 0 ? (
-            <div>
-              <p className="mb-2 text-[10px] uppercase tracking-[0.16em] text-zinc-400">Compare: {compareSensorId}</p>
-              <div className="grid grid-cols-3 gap-1 text-center">
-                <div className="rounded-sm border border-cyan-600/50 bg-cyan-500/10 p-2">
-                  <p className="text-[9px] text-cyan-300">EQK</p>
-                  <p className="mt-1 text-sm font-semibold text-cyan-200">{compareSnapshot.classificationCounts.EARTHQUAKE}</p>
-                </div>
-                <div className="rounded-sm border border-amber-600/50 bg-amber-500/10 p-2">
-                  <p className="text-[9px] text-amber-300">EXP</p>
-                  <p className="mt-1 text-sm font-semibold text-amber-200">{compareSnapshot.classificationCounts.CONVENTIONAL_EXPLOSION}</p>
-                </div>
-                <div className="rounded-sm border border-rose-600/50 bg-rose-500/10 p-2">
-                  <p className="text-[9px] text-rose-300">NUC</p>
-                  <p className="mt-1 text-sm font-semibold text-rose-200">{compareSnapshot.classificationCounts.NUCLEAR_LIKE}</p>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
-
         <div className="mb-3 text-xs uppercase tracking-[0.22em] text-zinc-400">Sensor Event Log</div>
         <div className="overflow-x-auto rounded-sm border border-zinc-700/90">
           <div className="min-w-[34rem]">
@@ -906,10 +867,10 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
         </div>
       </section>
 
-      {compareSensorId && (comparableSensors.length > 0) && (
-        <section className="tactical-panel p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs uppercase tracking-[0.2em] text-zinc-400">
-            <span>Sensor Comparison Analysis</span>
+      <section className="tactical-panel p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs uppercase tracking-[0.2em] text-zinc-400">
+          <span>Compare Two Sensor Sessions</span>
+          {comparableSensors.length > 0 ? (
             <select
               value={compareSensorId}
               onChange={(event) => setCompareSensorId(event.target.value)}
@@ -919,82 +880,123 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
                 <option key={sensor.sensor_id} value={sensor.sensor_id}>{sensor.sensor_id}</option>
               ))}
             </select>
-          </div>
+          ) : null}
+        </div>
 
-          {compareLoading ? (
-            <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Loading comparison sensor history...</p>
-          ) : compareError ? (
-            <p className="text-[10px] uppercase tracking-[0.14em] text-rose-300">{compareError}</p>
-          ) : (
-            <>
-              {comparisonDelta && (
-                <div className="mb-3 rounded-sm border border-zinc-700/80 bg-zinc-900/50 p-2 text-[10px] uppercase tracking-[0.14em] text-zinc-300">
-                  <p>
-                    Event delta: <span className={clsx(comparisonDelta.countDelta >= 0 ? 'text-emerald-300' : 'text-rose-300')}>
-                      {comparisonDelta.countDelta >= 0 ? '+' : ''}{comparisonDelta.countDelta}
-                    </span>
-                  </p>
-                  <p>
-                    Avg frequency delta: <span className={clsx(comparisonDelta.avgDelta !== null && comparisonDelta.avgDelta >= 0 ? 'text-emerald-300' : 'text-rose-300')}>
-                      {comparisonDelta.avgDelta !== null
-                        ? `${comparisonDelta.avgDelta >= 0 ? '+' : ''}${comparisonDelta.avgDelta.toFixed(2)} Hz`
-                        : 'N/A'}
-                    </span>
-                  </p>
-                  <p>
-                    Anomaly level: <span className={clsx(
-                      comparisonDelta.anomalyLevel === 'high'
-                        ? 'text-rose-300'
-                        : comparisonDelta.anomalyLevel === 'moderate'
-                          ? 'text-amber-300'
-                          : 'text-emerald-300',
-                    )}>
-                      {comparisonDelta.anomalyLevel}
-                    </span>
-                  </p>
+        {comparableSensors.length === 0 ? (
+          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">No secondary sensors available for comparison.</p>
+        ) : compareLoading ? (
+          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Loading comparison sensor history...</p>
+        ) : compareError ? (
+          <p className="text-[10px] uppercase tracking-[0.14em] text-rose-300">{compareError}</p>
+        ) : (
+          <>
+            <div className="mb-3 grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="mb-2 text-[10px] uppercase tracking-[0.16em] text-zinc-400">Primary: {sensorId}</p>
+                <div className="grid grid-cols-3 gap-1 text-center">
+                  <div className="rounded-sm border border-cyan-600/50 bg-cyan-500/10 p-2">
+                    <p className="text-[9px] text-cyan-300">EQK</p>
+                    <p className="mt-1 text-sm font-semibold text-cyan-200">{primarySnapshot.classificationCounts.EARTHQUAKE}</p>
+                  </div>
+                  <div className="rounded-sm border border-amber-600/50 bg-amber-500/10 p-2">
+                    <p className="text-[9px] text-amber-300">EXP</p>
+                    <p className="mt-1 text-sm font-semibold text-amber-200">{primarySnapshot.classificationCounts.CONVENTIONAL_EXPLOSION}</p>
+                  </div>
+                  <div className="rounded-sm border border-rose-600/50 bg-rose-500/10 p-2">
+                    <p className="text-[9px] text-rose-300">NUC</p>
+                    <p className="mt-1 text-sm font-semibold text-rose-200">{primarySnapshot.classificationCounts.NUCLEAR_LIKE}</p>
+                  </div>
                 </div>
-              )}
+              </div>
+              {compareSensorId && compareSnapshot.eventCount > 0 ? (
+                <div>
+                  <p className="mb-2 text-[10px] uppercase tracking-[0.16em] text-zinc-400">Compare: {compareSensorId}</p>
+                  <div className="grid grid-cols-3 gap-1 text-center">
+                    <div className="rounded-sm border border-cyan-600/50 bg-cyan-500/10 p-2">
+                      <p className="text-[9px] text-cyan-300">EQK</p>
+                      <p className="mt-1 text-sm font-semibold text-cyan-200">{compareSnapshot.classificationCounts.EARTHQUAKE}</p>
+                    </div>
+                    <div className="rounded-sm border border-amber-600/50 bg-amber-500/10 p-2">
+                      <p className="text-[9px] text-amber-300">EXP</p>
+                      <p className="mt-1 text-sm font-semibold text-amber-200">{compareSnapshot.classificationCounts.CONVENTIONAL_EXPLOSION}</p>
+                    </div>
+                    <div className="rounded-sm border border-rose-600/50 bg-rose-500/10 p-2">
+                      <p className="text-[9px] text-rose-300">NUC</p>
+                      <p className="mt-1 text-sm font-semibold text-rose-200">{compareSnapshot.classificationCounts.NUCLEAR_LIKE}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
 
-              <div className="space-y-2">
-                {primarySnapshot.profile.map((row, index) => {
-                  const compareRow = compareSnapshot.profile[index]
-                  const isEarthquake = row.label === 'EARTHQUAKE'
-                  const isExplosion = row.label === 'CONVENTIONAL_EXPLOSION'
-                  const isNuclear = row.label === 'NUCLEAR_LIKE'
-                  const barColor = isEarthquake ? 'bg-cyan-400/80' : isExplosion ? 'bg-amber-400/80' : 'bg-rose-400/80'
-                  const labelShort = isEarthquake ? 'Earthquake' : isExplosion ? 'Conventional' : 'Nuclear-like'
+            {comparisonDelta && (
+              <div className="mb-3 rounded-sm border border-zinc-700/80 bg-zinc-900/50 p-2 text-[10px] uppercase tracking-[0.14em] text-zinc-300">
+                <p>
+                  Event delta: <span className={clsx(comparisonDelta.countDelta >= 0 ? 'text-emerald-300' : 'text-rose-300')}>
+                    {comparisonDelta.countDelta >= 0 ? '+' : ''}{comparisonDelta.countDelta}
+                  </span>
+                </p>
+                <p>
+                  Avg frequency delta: <span className={clsx(comparisonDelta.avgDelta !== null && comparisonDelta.avgDelta >= 0 ? 'text-emerald-300' : 'text-rose-300')}>
+                    {comparisonDelta.avgDelta !== null
+                      ? `${comparisonDelta.avgDelta >= 0 ? '+' : ''}${comparisonDelta.avgDelta.toFixed(2)} Hz`
+                      : 'N/A'}
+                  </span>
+                </p>
+                <p>
+                  Anomaly level: <span className={clsx(
+                    comparisonDelta.anomalyLevel === 'high'
+                      ? 'text-rose-300'
+                      : comparisonDelta.anomalyLevel === 'moderate'
+                        ? 'text-amber-300'
+                        : 'text-emerald-300',
+                  )}>
+                    {comparisonDelta.anomalyLevel}
+                  </span>
+                </p>
+              </div>
+            )}
 
-                  return (
-                    <div key={row.label} className="rounded-sm border border-zinc-700/70 bg-zinc-900/40 p-2">
-                      <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">{labelShort}</p>
-                      <div className="mt-2 grid gap-3 md:grid-cols-2">
-                        <div>
-                          <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.12em] text-zinc-300">
-                            <span className="text-zinc-400">{sensorId}</span>
-                            <span className="font-semibold text-zinc-100">{row.count}</span>
-                          </div>
-                          <div className="mt-1.5 h-3 rounded bg-zinc-800">
-                            <div className={`h-full rounded ${barColor} ${isNuclear ? 'shadow' : ''}`} style={{ width: `${row.ratio * 100}%` }} />
-                          </div>
+            <div className="space-y-2">
+              {primarySnapshot.profile.map((row, index) => {
+                const compareRow = compareSnapshot.profile[index]
+                const isEarthquake = row.label === 'EARTHQUAKE'
+                const isExplosion = row.label === 'CONVENTIONAL_EXPLOSION'
+                const isNuclear = row.label === 'NUCLEAR_LIKE'
+                const barColor = isEarthquake ? 'bg-cyan-400/80' : isExplosion ? 'bg-amber-400/80' : 'bg-rose-400/80'
+                const labelShort = isEarthquake ? 'Earthquake' : isExplosion ? 'Conventional' : 'Nuclear-like'
+
+                return (
+                  <div key={row.label} className="rounded-sm border border-zinc-700/70 bg-zinc-900/40 p-2">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">{labelShort}</p>
+                    <div className="mt-2 grid gap-3 md:grid-cols-2">
+                      <div>
+                        <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.12em] text-zinc-300">
+                          <span className="text-zinc-400">{sensorId}</span>
+                          <span className="font-semibold text-zinc-100">{row.count}</span>
                         </div>
-                        <div>
-                          <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.12em] text-zinc-300">
-                            <span className="text-zinc-400">{compareSensorId}</span>
-                            <span className="font-semibold text-zinc-100">{compareRow.count}</span>
-                          </div>
-                          <div className="mt-1.5 h-3 rounded bg-zinc-800">
-                            <div className={`h-full rounded ${barColor} ${isNuclear ? 'shadow' : ''}`} style={{ width: `${compareRow.ratio * 100}%` }} />
-                          </div>
+                        <div className="mt-1.5 h-3 rounded bg-zinc-800">
+                          <div className={`h-full rounded ${barColor} ${isNuclear ? 'shadow' : ''}`} style={{ width: `${row.ratio * 100}%` }} />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.12em] text-zinc-300">
+                          <span className="text-zinc-400">{compareSensorId}</span>
+                          <span className="font-semibold text-zinc-100">{compareRow.count}</span>
+                        </div>
+                        <div className="mt-1.5 h-3 rounded bg-zinc-800">
+                          <div className={`h-full rounded ${barColor} ${isNuclear ? 'shadow' : ''}`} style={{ width: `${compareRow.ratio * 100}%` }} />
                         </div>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-            </>
-          )}
-        </section>
-      )}
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </section>
     </section>
   )
 }
