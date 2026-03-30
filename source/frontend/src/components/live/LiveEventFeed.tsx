@@ -13,9 +13,65 @@ interface LiveEventFeedProps {
 
 export const LiveEventFeed = ({ events, onSelectEvent }: LiveEventFeedProps) => {
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const noticeTimerRef = useRef<number | null>(null)
+  const streamSeenEventIdsRef = useRef<Set<string>>(new Set(events.map((event) => event.event_id)))
   const seenEventIdsRef = useRef<Set<string>>(new Set())
+  const pausedBufferedIdsRef = useRef<Set<string>>(new Set())
   const animationTimerRef = useRef<number | null>(null)
+  const [displayedEvents, setDisplayedEvents] = useState<SeismicEvent[]>(events)
+  const [isPaused, setIsPaused] = useState(false)
+  const [resumeNoticeCount, setResumeNoticeCount] = useState(0)
+  const [showResumeNotice, setShowResumeNotice] = useState(false)
   const [animatedRowIds, setAnimatedRowIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const incomingIds: string[] = []
+    for (let index = events.length - 1; index >= 0; index -= 1) {
+      const eventId = events[index].event_id
+      if (!streamSeenEventIdsRef.current.has(eventId)) {
+        incomingIds.push(eventId)
+        streamSeenEventIdsRef.current.add(eventId)
+      }
+    }
+
+    if (isPaused) {
+      for (const eventId of incomingIds) {
+        pausedBufferedIdsRef.current.add(eventId)
+      }
+      return
+    }
+
+    setDisplayedEvents(events)
+  }, [events, isPaused])
+
+  const handlePauseToggle = () => {
+    if (!isPaused) {
+      setIsPaused(true)
+      return
+    }
+
+    const bufferedCount = pausedBufferedIdsRef.current.size
+    pausedBufferedIdsRef.current = new Set()
+
+    setIsPaused(false)
+    setDisplayedEvents(events)
+
+    if (bufferedCount === 0) {
+      return
+    }
+
+    setResumeNoticeCount(bufferedCount)
+    setShowResumeNotice(true)
+
+    if (noticeTimerRef.current !== null) {
+      window.clearTimeout(noticeTimerRef.current)
+    }
+
+    noticeTimerRef.current = window.setTimeout(() => {
+      setShowResumeNotice(false)
+      noticeTimerRef.current = null
+    }, 2600)
+  }
 
   useEffect(() => {
     const el = scrollRef.current
@@ -24,14 +80,14 @@ export const LiveEventFeed = ({ events, onSelectEvent }: LiveEventFeedProps) => 
     }
 
     el.scrollTop = 0
-  }, [events])
+  }, [displayedEvents])
 
   useEffect(() => {
-    const freshIds = events
+    const freshIds = displayedEvents
       .filter((event) => !seenEventIdsRef.current.has(event.event_id))
       .map((event) => event.event_id)
 
-    seenEventIdsRef.current = new Set(events.map((event) => event.event_id))
+    seenEventIdsRef.current = new Set(displayedEvents.map((event) => event.event_id))
 
     if (freshIds.length === 0) {
       return
@@ -53,12 +109,15 @@ export const LiveEventFeed = ({ events, onSelectEvent }: LiveEventFeedProps) => 
       setAnimatedRowIds(new Set())
       animationTimerRef.current = null
     }, 1800)
-  }, [events])
+  }, [displayedEvents])
 
   useEffect(() => {
     return () => {
       if (animationTimerRef.current !== null) {
         window.clearTimeout(animationTimerRef.current)
+      }
+      if (noticeTimerRef.current !== null) {
+        window.clearTimeout(noticeTimerRef.current)
       }
     }
   }, [])
@@ -73,7 +132,25 @@ export const LiveEventFeed = ({ events, onSelectEvent }: LiveEventFeedProps) => 
     <section className="tactical-panel p-4">
       <div className="mb-3 flex items-center justify-between text-xs uppercase tracking-[0.24em] text-zinc-400">
         <span>Live Event Feed</span>
-        <span>{events.length} records buffered</span>
+        <div className="relative flex items-center gap-2">
+          <span>{events.length} records buffered</span>
+          <button
+            type="button"
+            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
+            onClick={handlePauseToggle}
+            aria-pressed={isPaused}
+          >
+            {isPaused ? 'Resume' : 'Pause'}
+          </button>
+          <span
+            className={clsx(
+              'pointer-events-none absolute -bottom-5 right-0 text-[10px] tracking-[0.14em] text-cyan-300 transition-opacity duration-500',
+              showResumeNotice ? 'opacity-100' : 'opacity-0',
+            )}
+          >
+            + {resumeNoticeCount} events
+          </span>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-sm border border-zinc-700/90">
@@ -86,10 +163,10 @@ export const LiveEventFeed = ({ events, onSelectEvent }: LiveEventFeedProps) => 
           <span>Classification</span>
         </div>
           <div ref={scrollRef} className="max-h-[18rem] overflow-y-auto bg-zinc-950/70">
-            {events.length === 0 ? (
+            {displayedEvents.length === 0 ? (
               <p className="px-3 py-8 text-center text-sm uppercase tracking-[0.2em] text-zinc-500">Awaiting live events...</p>
             ) : (
-              events.map((event) => (
+              displayedEvents.map((event) => (
                 <div
                   key={event.event_id}
                   className={clsx(

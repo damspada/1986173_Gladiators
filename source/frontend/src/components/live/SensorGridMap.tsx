@@ -115,10 +115,16 @@ const buildSensorIcon = (isHot: boolean, tone: string) => {
 
 export const SensorGridMap = ({ sensors, latestEvents, onSelectSensor }: SensorGridMapProps) => {
   const [nowMs, setNowMs] = useState(() => Date.now())
-  const hotSensors = new Set(latestEvents.slice(0, 20).map((event) => event.sensor_id))
+  const [isPaused, setIsPaused] = useState(false)
+  const [displayedEvents, setDisplayedEvents] = useState<SeismicEvent[]>(latestEvents)
+  const hotSensors = new Set(displayedEvents.slice(0, 20).map((event) => event.sensor_id))
   const latestBySensor = new Map<string, SeismicEvent>()
 
   useEffect(() => {
+    if (isPaused) {
+      return
+    }
+
     const timer = window.setInterval(() => {
       setNowMs(Date.now())
     }, 900)
@@ -126,16 +132,22 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectSensor }: SensorG
     return () => {
       window.clearInterval(timer)
     }
-  }, [])
+  }, [isPaused])
 
-  for (const event of latestEvents) {
+  useEffect(() => {
+    if (!isPaused) {
+      setDisplayedEvents(latestEvents)
+    }
+  }, [latestEvents, isPaused])
+
+  for (const event of displayedEvents) {
     if (!latestBySensor.has(event.sensor_id)) {
       latestBySensor.set(event.sensor_id, event)
     }
   }
 
   const sensorById = new Map(sensors.map((sensor) => [sensor.sensor_id, sensor]))
-  const trailingEvents = latestEvents
+  const trailingEvents = displayedEvents
     .slice(0, 80)
     .map((event) => {
       const timestampMs = Date.parse(event.timestamp)
@@ -161,7 +173,22 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectSensor }: SensorG
     <section className="tactical-panel relative min-h-[16rem] overflow-hidden p-3 sm:min-h-[20rem] sm:p-4">
       <div className="relative z-10 flex items-center justify-between pb-3 text-xs uppercase tracking-[0.22em] text-zinc-400">
         <span>Global Sensor Map</span>
-        <span>{sensors.length} units online</span>
+        <div className="flex items-center gap-2">
+          <span>{sensors.length} units online</span>
+          <button
+            type="button"
+            className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20"
+            onClick={() => {
+              if (!isPaused) {
+                setNowMs(Date.now())
+              }
+              setIsPaused((value) => !value)
+            }}
+            aria-pressed={isPaused}
+          >
+            {isPaused ? 'Resume Map' : 'Pause Map'}
+          </button>
+        </div>
       </div>
 
       <div className="relative z-10 h-[13rem] rounded-sm border border-zinc-700/80 bg-zinc-950/70 sm:h-[16.5rem]">
@@ -206,7 +233,7 @@ export const SensorGridMap = ({ sensors, latestEvents, onSelectSensor }: SensorG
             <SensorBounds sensors={sensors} />
 
             <MapController latestEvent={
-              latestEvents[0]?.sensor ? ({ ...latestEvents[0], sensor: latestEvents[0].sensor }) : null
+              displayedEvents[0]?.sensor ? ({ ...displayedEvents[0], sensor: displayedEvents[0].sensor }) : null
             } />
 
             {trailingEvents.map(({ event, ageMs, sensor }) => {

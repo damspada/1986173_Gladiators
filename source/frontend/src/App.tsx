@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { AboutModal } from './components/common/AboutModal'
 import { EventDetailsModal } from './components/common/EventDetailsModal'
@@ -12,6 +12,18 @@ import { LiveDashboardPage } from './pages/LiveDashboardPage'
 import { SensorDetailsPage } from './pages/SensorDetailsPage'
 import { ZoneDetailsPage } from './pages/ZoneDetailsPage'
 import type { SeismicEvent } from './types/seismic'
+import {
+  alertSeverityLabel,
+  evaluateAlertSeverity,
+  isSeverityAtLeast,
+  normalizeAlertPreferences,
+  readAlertPreferences,
+  saveAlertPreferences,
+  shouldTriggerAlert,
+  type AlertPreferences,
+  type AlertSeverity,
+} from './utils/alerting'
+import { playAlertTone } from './utils/alertAudio'
 
 const LIVE_SOCKET_URL = (import.meta.env.VITE_LIVE_WS_URL as string | undefined)?.trim()
 const LIVE_HISTORY_URL = (import.meta.env.VITE_HISTORY_API_URL as string | undefined)?.trim()
@@ -28,6 +40,12 @@ type ThemePattern = 'classic' | 'amber' | 'emerald'
 interface ThemePreferences {
   mode: ThemeMode
   pattern: ThemePattern
+}
+
+interface AlertNotice {
+  severity: AlertSeverity
+  frequency: number
+  triggeredAt: string
 }
 
 const DEFAULT_THEME_PREFERENCES: ThemePreferences = {
@@ -104,10 +122,22 @@ const AppFrame = () => {
   const [selectedEvent, setSelectedEvent] = useState<SeismicEvent | null>(null)
   const [showAbout, setShowAbout] = useState(false)
   const [themePreferences, setThemePreferences] = useState<ThemePreferences>(() => readStoredThemePreferences())
+  const [alertPreferences, setAlertPreferences] = useState<AlertPreferences>(() => readAlertPreferences())
+  const [activeAlertSeverity, setActiveAlertSeverity] = useState<AlertSeverity | null>(null)
+  const [alertNotice, setAlertNotice] = useState<AlertNotice | null>(null)
   const location = useLocation()
   const navigate = useNavigate()
   const [isRouteTransitioning, setIsRouteTransitioning] = useState(false)
   const [decryptLabel, setDecryptLabel] = useState(pageDecryptLabel(location.pathname))
+  const lastProcessedEventIdRef = useRef<string | null>(null)
+  const currentSeverityRef = useRef<AlertSeverity | null>(null)
+  const lastTriggeredRef = useRef<Record<AlertSeverity, number | null>>({
+    low: null,
+    medium: null,
+    high: null,
+    critical: null,
+  })
+  const alertNoticeTimerRef = useRef<number | null>(null)
 
   const openSensorPage = (sensorId: string) => {
     setSelectedEvent(null)
@@ -151,6 +181,89 @@ const AppFrame = () => {
     document.documentElement.dataset.colorPattern = themePreferences.pattern
     window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themePreferences))
   }, [themePreferences])
+
+  useEffect(() => {
+    saveAlertPreferences(alertPreferences)
+  }, [alertPreferences])
+
+  useEffect(() => {
+    const latestEvent = stream.events[0]
+    if (!latestEvent) {
+      return
+    }
+
+    if (latestEvent.event_id === lastProcessedEventIdRef.current) {
+      return
+    }
+
+    lastProcessedEventIdRef.current = latestEvent.event_id
+    const nowMs = Date.now()
+    const nextSeverity = evaluateAlertSeverity(latestEvent.frequency, alertPreferences.thresholds)
+    const previousSeverity = currentSeverityRef.current
+    currentSeverityRef.current = nextSeverity
+    setActiveAlertSeverity(nextSeverity)
+
+    const shouldAlert = shouldTriggerAlert({
+      previousSeverity,
+      nextSeverity,
+      lastTriggeredAtMs: nextSeverity ? lastTriggeredRef.current[nextSeverity] : null,
+      nowMs,
+      cooldownMs: alertPreferences.cooldownMs,
+      reAlertOnStable: alertPreferences.reAlertOnStable,
+    })
+
+    if (!shouldAlert || !nextSeverity) {
+      return
+    }
+
+    lastTriggeredRef.current[nextSeverity] = nowMs
+
+    const shouldPlayAudio =
+      alertPreferences.audioEnabled && isSeverityAtLeast(nextSeverity, alertPreferences.audioMinSeverity)
+    const shouldShowVisual =
+      alertPreferences.visualEnabled && isSeverityAtLeast(nextSeverity, alertPreferences.visualMinSeverity)
+
+    if (shouldPlayAudio) {
+      playAlertTone(nextSeverity, alertPreferences.audioVolume)
+    }
+
+    if (shouldShowVisual) {
+      setAlertNotice({
+        severity: nextSeverity,
+        frequency: latestEvent.frequency,
+        triggeredAt: latestEvent.timestamp,
+      })
+
+      if (alertNoticeTimerRef.current !== null) {
+        window.clearTimeout(alertNoticeTimerRef.current)
+      }
+
+      alertNoticeTimerRef.current = window.setTimeout(() => {
+        setAlertNotice(null)
+        alertNoticeTimerRef.current = null
+      }, alertPreferences.visualDurationMs)
+    }
+  }, [alertPreferences, stream.events])
+
+  useEffect(() => {
+    if (alertPreferences.visualEnabled) {
+      return
+    }
+
+    setAlertNotice(null)
+    if (alertNoticeTimerRef.current !== null) {
+      window.clearTimeout(alertNoticeTimerRef.current)
+      alertNoticeTimerRef.current = null
+    }
+  }, [alertPreferences.visualEnabled])
+
+  useEffect(() => {
+    return () => {
+      if (alertNoticeTimerRef.current !== null) {
+        window.clearTimeout(alertNoticeTimerRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const targetLabel = pageDecryptLabel(location.pathname)
@@ -200,9 +313,21 @@ const AppFrame = () => {
             }))
           }
           onResetTheme={() => setThemePreferences(DEFAULT_THEME_PREFERENCES)}
+          activeAlertSeverity={activeAlertSeverity}
+          alertPreferences={alertPreferences}
+          onAlertPreferencesChange={(next) => setAlertPreferences(normalizeAlertPreferences(next))}
         />
 
         <main className={isRouteTransitioning ? 'route-content route-content--transitioning' : 'route-content'}>
+          {alertPreferences.visualEnabled && alertNotice ? (
+            <section className="mb-3 rounded-sm border border-rose-400/70 bg-rose-900/20 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100">
+              <p className="font-semibold text-rose-200">{alertSeverityLabel[alertNotice.severity]} Frequency Alert</p>
+              <p className="mt-1 text-rose-100/90">
+                Frequency {alertNotice.frequency.toFixed(2)} Hz crossed configured threshold at {new Date(alertNotice.triggeredAt).toUTCString()}.
+              </p>
+            </section>
+          ) : null}
+
           <Routes>
             <Route path="/" element={<Navigate to="/live" replace />} />
             <Route

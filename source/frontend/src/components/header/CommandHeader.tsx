@@ -2,8 +2,10 @@ import clsx from 'clsx'
 import { Link, NavLink } from 'react-router-dom'
 import { StatusDot } from '../common/StatusDot'
 import { ThemeMenu } from './ThemeMenu'
+import { AlertSettingsMenu } from './AlertSettingsMenu'
 import { useUtcClock } from '../../hooks/useUtcClock'
 import type { ConnectionState } from '../../types/seismic'
+import type { AlertPreferences, AlertSeverity } from '../../utils/alerting'
 
 type ThemeMode = 'dark' | 'light'
 type ThemePattern = 'classic' | 'amber' | 'emerald'
@@ -16,6 +18,9 @@ interface CommandHeaderProps {
   onChangeThemePattern: (pattern: ThemePattern) => void
   onToggleThemeMode: () => void
   onResetTheme: () => void
+  activeAlertSeverity: AlertSeverity | null
+  alertPreferences: AlertPreferences
+  onAlertPreferencesChange: (next: AlertPreferences) => void
 }
 
 export const CommandHeader = ({
@@ -26,6 +31,9 @@ export const CommandHeader = ({
   onChangeThemePattern,
   onToggleThemeMode,
   onResetTheme,
+  activeAlertSeverity,
+  alertPreferences,
+  onAlertPreferencesChange,
 }: CommandHeaderProps) => {
   const utcClock = useUtcClock()
 
@@ -64,6 +72,11 @@ export const CommandHeader = ({
               onChangeThemePattern={onChangeThemePattern}
               onToggleThemeMode={onToggleThemeMode}
               onResetTheme={onResetTheme}
+            />
+            <AlertSettingsMenu
+              activeAlertSeverity={activeAlertSeverity}
+              alertPreferences={alertPreferences}
+              onAlertPreferencesChange={onAlertPreferencesChange}
             />
           </div>
 

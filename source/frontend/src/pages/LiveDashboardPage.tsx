@@ -38,6 +38,20 @@ export const LiveDashboardPage = ({
       ? 'Degraded'
       : 'Unavailable'
 
+  const eventTypeBreakdown = useMemo(() => {
+    const breakdown = {
+      EARTHQUAKE: 0,
+      CONVENTIONAL_EXPLOSION: 0,
+      NUCLEAR_LIKE: 0,
+    }
+
+    for (const event of events) {
+      breakdown[event.classification] += 1
+    }
+
+    return breakdown
+  }, [events])
+
   return (
     <section className="space-y-4">
       {infrastructureHealthLabel !== 'Nominal' && (
@@ -135,6 +149,24 @@ export const LiveDashboardPage = ({
               >
                 Export Metrics
               </button>
+            </div>
+          </section>
+
+          <section className="tactical-panel p-3">
+            <div className="mb-3 text-[11px] uppercase tracking-[0.16em] text-zinc-400">Event Type Breakdown</div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-sm border border-cyan-600/50 bg-cyan-500/10 p-2 text-center">
+                <p className="text-[9px] uppercase tracking-[0.1em] text-cyan-300">Earthquake</p>
+                <p className="mt-2 text-lg font-bold text-cyan-200">{eventTypeBreakdown.EARTHQUAKE}</p>
+              </div>
+              <div className="rounded-sm border border-amber-600/50 bg-amber-500/10 p-2 text-center">
+                <p className="text-[9px] uppercase tracking-[0.1em] text-amber-300">Conventional</p>
+                <p className="mt-2 text-lg font-bold text-amber-200">{eventTypeBreakdown.CONVENTIONAL_EXPLOSION}</p>
+              </div>
+              <div className="rounded-sm border border-rose-600/50 bg-rose-500/10 p-2 text-center">
+                <p className="text-[9px] uppercase tracking-[0.1em] text-rose-300">Nuclear-like</p>
+                <p className="mt-2 text-lg font-bold text-rose-200">{eventTypeBreakdown.NUCLEAR_LIKE}</p>
+              </div>
             </div>
           </section>
 
