@@ -205,9 +205,6 @@ export const InfrastructurePage = ({ historyApiUrl, disconnectHistory = [] }: In
                           {replica.status.charAt(0).toUpperCase() + replica.status.slice(1)}
                         </span>
                       </p>
-                      <p className="text-[10px] uppercase tracking-[0.08em] text-zinc-400">
-                        Lag: <span className="text-zinc-200">{replica.lagMs}ms</span>
-                      </p>
                     </div>
                   </div>
                 ))}

@@ -9,9 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Duration;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 @RestController
@@ -30,15 +27,11 @@ public class InfrastructureController {
     @GetMapping("/status")
     public InfrastructureStatusDto getStatus() {
         List<Replica> allReplicas = replicaRepository.findAllOrderByLastSeen();
-        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
 
         List<InfrastructureReplicaDto> replicaDtos = allReplicas.stream()
                 .map(r -> new InfrastructureReplicaDto(
                         r.getReplicaId(),
-                        "connected".equals(r.getStatus()) ? "healthy" : "down",
-                        r.getLastSeen() != null
-                                ? Duration.between(r.getLastSeen(), now).toMillis()
-                                : 0L
+                "connected".equals(r.getStatus()) ? "healthy" : "down"
                 ))
                 .toList();
 

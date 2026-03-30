@@ -121,7 +121,7 @@ export const LiveDashboardPage = ({
                     healthyReplicas,
                     activeReplica: infrastructure?.activeReplica ?? 'n/a',
                     lastFailoverAt: infrastructure?.lastFailoverAt ?? 'not recorded',
-                    replicas: infrastructure?.replicas.map(r => ({ id: r.id, status: r.status, lagMs: r.lagMs })) ?? [],
+                    replicas: infrastructure?.replicas.map(r => ({ id: r.id, status: r.status })) ?? [],
                     systemMetrics: {
                       memoryUsageMB: {
                         rss: Math.round(memUsage.rss / 1024 / 1024),
@@ -154,6 +154,10 @@ export const LiveDashboardPage = ({
 
           <section className="tactical-panel p-3">
             <div className="mb-3 text-[11px] uppercase tracking-[0.16em] text-zinc-400">Event Type Breakdown</div>
+            <div className="mb-4 rounded-sm border border-zinc-600/50 bg-zinc-500/10 p-3 text-center">
+              <p className="text-[9px] uppercase tracking-[0.1em] text-zinc-300">Total Events</p>
+              <p className="mt-2 text-2xl font-bold text-zinc-100">{events.length}</p>
+            </div>
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-sm border border-cyan-600/50 bg-cyan-500/10 p-2 text-center">
                 <p className="text-[9px] uppercase tracking-[0.1em] text-cyan-300">Earthquake</p>

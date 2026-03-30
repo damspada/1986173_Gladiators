@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { SensorNavLink } from '../components/common/SensorNavLink'
+import { EventTimeline } from '../components/history/EventTimeline'
 import { classificationBadgeClass, classificationLabel } from '../utils/classification'
 import { formatFrequency, formatUtcTimestamp } from '../utils/format'
 import { fetchHistoryEvents } from '../services/historyApi'
@@ -210,6 +211,8 @@ export const ZoneDetailsPage = ({ sensors, liveEvents, onSelectEvent }: ZoneDeta
           </div>
         </section>
       </section>
+
+      <EventTimeline events={allEvents} onSelectEvent={onSelectEvent} />
     </section>
   )
 }

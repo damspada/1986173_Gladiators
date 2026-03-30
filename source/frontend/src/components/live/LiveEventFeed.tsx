@@ -18,6 +18,7 @@ export const LiveEventFeed = ({ events, onSelectEvent }: LiveEventFeedProps) => 
   const seenEventIdsRef = useRef<Set<string>>(new Set())
   const pausedBufferedIdsRef = useRef<Set<string>>(new Set())
   const animationTimerRef = useRef<number | null>(null)
+  const displayedCountAtPauseRef = useRef(0)
   const [displayedEvents, setDisplayedEvents] = useState<SeismicEvent[]>(events)
   const [isPaused, setIsPaused] = useState(false)
   const [resumeNoticeCount, setResumeNoticeCount] = useState(0)
@@ -47,20 +48,21 @@ export const LiveEventFeed = ({ events, onSelectEvent }: LiveEventFeedProps) => 
   const handlePauseToggle = () => {
     if (!isPaused) {
       setIsPaused(true)
+      displayedCountAtPauseRef.current = displayedEvents.length
       return
     }
 
-    const bufferedCount = pausedBufferedIdsRef.current.size
+    const newEventCount = events.length - displayedCountAtPauseRef.current
     pausedBufferedIdsRef.current = new Set()
 
     setIsPaused(false)
     setDisplayedEvents(events)
 
-    if (bufferedCount === 0) {
+    if (newEventCount <= 0) {
       return
     }
 
-    setResumeNoticeCount(bufferedCount)
+    setResumeNoticeCount(newEventCount)
     setShowResumeNotice(true)
 
     if (noticeTimerRef.current !== null) {

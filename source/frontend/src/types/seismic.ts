@@ -82,7 +82,6 @@ export interface HistoryPageResult {
 export interface InfrastructureReplica {
   id: string
   status: 'healthy' | 'down'
-  lagMs: number
 }
 
 export interface InfrastructureStatus {
