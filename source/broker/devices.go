@@ -44,3 +44,28 @@ func getSensors() ([]Sensor, error) {
 
 	return sensors, nil
 }
+
+type HealthResponse struct {
+	SamplingRateHz float64 `json:"samplingRateHz"`
+}
+
+func getSamplingRate() (float64, error) {
+	risposta, err := http.Get(getSimulatorURL() + "/health")
+	if err != nil {
+		return 0, err
+	}
+	defer risposta.Body.Close()
+
+	body, err := io.ReadAll(risposta.Body)
+	if err != nil {
+		return 0, err
+	}
+
+	var h HealthResponse
+	err = json.Unmarshal(body, &h)
+	if err != nil {
+		return 0, err
+	}
+
+	return h.SamplingRateHz, nil
+}

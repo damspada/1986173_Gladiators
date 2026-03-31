@@ -17,12 +17,14 @@ type Hub struct {
 	clients    map[string]*Client // mappa id -> client
 	mu         sync.RWMutex       // protegge la mappa
 	backendHub *BackendHub        // notifica il backend dei cambi di stato
+	bufferSize int                // dimensione canale per ogni replica
 }
 
-func newHub(backendHub *BackendHub) *Hub {
+func newHub(backendHub *BackendHub, bufferSize int) *Hub {
 	return &Hub{
 		clients:    make(map[string]*Client),
 		backendHub: backendHub,
+		bufferSize: bufferSize,
 	}
 }
 
@@ -45,16 +47,26 @@ func (h *Hub) rimuovi(client *Client) {
 	go h.backendHub.notifyReplicaStatus(client.id, "disconnected")
 }
 
-// manda un messaggio a tutte le repliche
+// manda un messaggio a tutte le repliche.
+// Se il canale è pieno, scarta il messaggio più vecchio e inserisce quello nuovo
+// (drop-oldest): la replica riceve sempre i dati più recenti quando si riallinea.
 func (h *Hub) broadcast(messaggio []byte) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	for _, client := range h.clients {
 		select {
-		case client.channel <- messaggio: // manda il messaggio
+		case client.channel <- messaggio:
 		default:
-			// il canale è pieno, la replica è troppo lenta — skippa
+			// canale pieno: rimuovi il messaggio più vecchio, poi inserisci il nuovo
+			select {
+			case <-client.channel:
+			default:
+			}
+			select {
+			case client.channel <- messaggio:
+			default:
+			}
 		}
 	}
 }
@@ -75,7 +87,7 @@ func (h *Hub) handleSSE(w http.ResponseWriter, r *http.Request) {
 	// crea il client per questa replica
 	client := &Client{
 		id:      replicaID,
-		channel: make(chan []byte, 100),
+		channel: make(chan []byte, h.bufferSize),
 	}
 
 	h.aggiungi(client)

@@ -8,11 +8,45 @@ import (
 )
 
 func main() {
+	// riprova a recuperare i sensori finché il simulatore non è pronto
+	var sensors []Sensor
+	for {
+		var err error
+		sensors, err = getSensors()
+		if err == nil {
+			break
+		}
+		fmt.Printf("In attesa del simulatore (devices): %v. Riprovo tra 5s...\n", err)
+		time.Sleep(5 * time.Second)
+	}
+	fmt.Printf("Trovati %d sensori\n", len(sensors))
+
+	// recupera il sampling rate per dimensionare il buffer delle repliche
+	var samplingRate float64
+	for {
+		var err error
+		samplingRate, err = getSamplingRate()
+		if err == nil {
+			break
+		}
+		fmt.Printf("In attesa del simulatore (health): %v. Riprovo tra 5s...\n", err)
+		time.Sleep(5 * time.Second)
+	}
+	fmt.Printf("Sampling rate: %.1f Hz\n", samplingRate)
+
+	// buffer = num_sensors × sampling_rate × 2s; minimo 100
+	const bufferSeconds = 2
+	bufferSize := len(sensors) * int(samplingRate) * bufferSeconds
+	if bufferSize < 100 {
+		bufferSize = 100
+	}
+	fmt.Printf("Buffer per replica: %d messaggi\n", bufferSize)
+
 	// crea l'hub che notifica il backend dei cambi di stato replica
 	backendHub := newBackendHub()
 
 	// crea l'hub che gestisce le repliche
-	hub := newHub(backendHub)
+	hub := newHub(backendHub, bufferSize)
 
 	// esponi l'endpoint SSE per le repliche
 	http.HandleFunc("/stream", hub.handleSSE)
@@ -27,20 +61,6 @@ func main() {
 			fmt.Printf("Errore server: %v\n", err)
 		}
 	}()
-
-	// riprova a recuperare i sensori finché il simulatore non è pronto
-	var sensors []Sensor
-	for {
-		var err error
-		sensors, err = getSensors()
-		if err == nil {
-			break
-		}
-		fmt.Printf("In attesa del simulatore: %v. Riprovo tra 5s...\n", err)
-		time.Sleep(5 * time.Second)
-	}
-
-	fmt.Printf("Trovati %d sensori\n", len(sensors))
 
 	var wg sync.WaitGroup
 	for _, sensor := range sensors {

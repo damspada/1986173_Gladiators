@@ -29,6 +29,23 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://backend:8090")
 # Global HTTP client for the control stream
 http_client = httpx.AsyncClient(headers={"X-Replica-ID": REPLICA_ID})
 
+async def fetch_sampling_rate() -> float:
+    """
+    Fetches the actual sampling rate from the simulator /health endpoint.
+    Retries indefinitely until the simulator is reachable.
+    """
+    health_url = f"{SIMULATOR_URL}/health"
+    while True:
+        try:
+            resp = await http_client.get(health_url, timeout=5.0)
+            resp.raise_for_status()
+            rate = float(resp.json()["samplingRateHz"])
+            logger.info("Simulator reports samplingRateHz=%.1f", rate)
+            return rate
+        except Exception as e:
+            logger.warning("Cannot reach simulator /health: %s — retrying in 3s...", e)
+            await asyncio.sleep(3)
+
 async def listen_to_broker(app):
     """
     Consumes the SSE (Server-Sent Events) stream from the Internal Broker.
@@ -129,9 +146,11 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing replica %s...", REPLICA_ID)
     app.state.repo = await create_repository(REPLICA_ID)
 
-    # Initialize the analyzer (Default sampling rate is 20Hz as per DOCKER_CONTRACT.md)
-    app.state.analyzer = SeismicAnalyzer(sampling_rate=20.0)
-    logger.info("SeismicAnalyzer ready (window=200 samples @ 20Hz)")
+    # Fetch the actual sampling rate from the simulator before starting analysis
+    sampling_rate = await fetch_sampling_rate()
+    window_size = int(sampling_rate * 10)
+    app.state.analyzer = SeismicAnalyzer(sampling_rate=sampling_rate, window_size=window_size)
+    logger.info("SeismicAnalyzer ready (window=%d samples @ %.1fHz)", window_size, sampling_rate)
 
     # Start background ingestion and control tasks
     broker_task = asyncio.create_task(listen_to_broker(app))
