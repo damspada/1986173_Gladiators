@@ -15,4 +15,7 @@ public interface ReplicaRepository extends Neo4jRepository<Replica, String> {
 
     @Query("MATCH (r:Replica) RETURN r ORDER BY r.lastSeen DESC")
     List<Replica> findAllOrderByLastSeen();
+
+    @Query("MATCH (r:Replica) OPTIONAL MATCH (r)-[:HAD_DISCONNECTION]->(d:DisconnectionEvent) DETACH DELETE r, d")
+    void deleteAllWithDisconnections();
 }

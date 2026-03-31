@@ -2,18 +2,18 @@ interface AboutModalProps {
   open: boolean
   onClose: () => void
   frontendVersion: string
+  commitHash: string
+  backendImageTag: string
   buildTimestamp: string
-  liveWsUrl?: string
-  historyApiUrl?: string
 }
 
 export const AboutModal = ({
   open,
   onClose,
   frontendVersion,
+  commitHash,
+  backendImageTag,
   buildTimestamp,
-  liveWsUrl,
-  historyApiUrl,
 }: AboutModalProps) => {
   if (!open) {
     return null
@@ -38,13 +38,9 @@ export const AboutModal = ({
 
         <div className="mt-4 space-y-2 text-[11px] uppercase tracking-[0.1em] text-zinc-300">
           <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Frontend version: {frontendVersion}</p>
+          <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Commit hash: {commitHash}</p>
+          <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Backend image: {backendImageTag}</p>
           <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Build timestamp: {buildTimestamp}</p>
-          <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">
-            Live websocket: {liveWsUrl && liveWsUrl.length > 0 ? 'configured' : 'not configured'}
-          </p>
-          <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">
-            History API: {historyApiUrl && historyApiUrl.length > 0 ? 'configured' : 'not configured'}
-          </p>
         </div>
       </div>
     </div>

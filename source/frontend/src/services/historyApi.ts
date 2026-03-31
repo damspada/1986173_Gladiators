@@ -99,6 +99,7 @@ interface BackendIncidentCluster {
   severity: string
   from: string
   to: string
+  cluster_time: string
   count: number
   peak_frequency: number
   confirmed_count: number
@@ -133,6 +134,7 @@ export const fetchIncidentClusters = async (
     severity: mapBackendSeverity(cluster.severity),
     from: cluster.from,
     to: cluster.to,
+    clusterTime: cluster.cluster_time,
     count: cluster.count,
     peakFrequency: cluster.peak_frequency,
     confirmedCount: cluster.confirmed_count,

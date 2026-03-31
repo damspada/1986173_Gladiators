@@ -133,6 +133,9 @@ export const IncidentGroupView = ({ onSelectEvent, filters, timeFilter }: Incide
                   <span className="text-[11px] text-zinc-400">
                     {cluster.count} event{cluster.count !== 1 ? 's' : ''}
                   </span>
+                  <span className="font-mono text-[11px] text-zinc-500" title="Cluster detected at">
+                    {formatUtcTimestamp(cluster.clusterTime)}
+                  </span>
                 </div>
                 <div className="flex shrink-0 items-center gap-3 text-[11px] text-zinc-400">
                   {cluster.peakFrequency != null && (

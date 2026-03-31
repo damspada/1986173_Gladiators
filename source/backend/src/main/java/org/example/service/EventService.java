@@ -224,12 +224,15 @@ public class EventService {
                 .map(SeismicEventDto::forHistory)
                 .toList();
 
+        String fromTs = first.getTimestamp().toInstant().toString();
+
         return new IncidentClusterDto(
                 id,
                 region,
                 severity.name(),
-                first.getTimestamp().toInstant().toString(),
+                fromTs,
                 last.getTimestamp().toInstant().toString(),
+                fromTs,
                 group.size(),
                 peakFreq,
                 confirmedCount,

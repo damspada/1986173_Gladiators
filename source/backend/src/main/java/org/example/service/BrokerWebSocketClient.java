@@ -50,6 +50,10 @@ public class BrokerWebSocketClient {
 
     @PostConstruct
     public void connect() {
+        log.info("Clearing stale replicas from database before connecting to broker...");
+        replicaRepository.deleteAllWithDisconnections();
+        log.info("Stale replicas cleared.");
+
         ReactorNettyWebSocketClient client = new ReactorNettyWebSocketClient();
 
         client.execute(URI.create(brokerWsUrl), session ->

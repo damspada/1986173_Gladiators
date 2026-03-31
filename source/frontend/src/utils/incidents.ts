@@ -6,6 +6,7 @@ export interface IncidentCluster {
   severity: EventClassification
   from: string
   to: string
+  clusterTime: string
   count: number
   events: SeismicEvent[]
   peakFrequency?: number
@@ -50,6 +51,7 @@ export const groupEventsByIncident = (
         severity: event.classification,
         from: event.timestamp,
         to: event.timestamp,
+        clusterTime: event.timestamp,
         count: 1,
         events: [event],
       })
@@ -71,6 +73,7 @@ export const groupEventsByIncident = (
       severity: event.classification,
       from: event.timestamp,
       to: event.timestamp,
+      clusterTime: event.timestamp,
       count: 1,
       events: [event],
     })

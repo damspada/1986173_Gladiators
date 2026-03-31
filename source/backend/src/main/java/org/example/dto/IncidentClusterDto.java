@@ -14,6 +14,7 @@ public record IncidentClusterDto(
         String severity,
         @JsonProperty("from") String fromTimestamp,
         @JsonProperty("to")   String toTimestamp,
+        @JsonProperty("cluster_time") String clusterTime,
         int count,
         @JsonProperty("peak_frequency") double peakFrequency,
         @JsonProperty("confirmed_count") int confirmedCount,

@@ -19,13 +19,14 @@ const csvEscape = (value: string): string => {
 }
 
 export const toEventsCsv = (events: SeismicEvent[]): string => {
-  const header = ['event_id', 'sensor_id', 'timestamp', 'frequency', 'classification', 'region']
+  const header = ['event_id', 'sensor_id', 'timestamp', 'frequency', 'classification', 'severity', 'region']
   const rows = events.map((event) => [
     event.event_id,
     event.sensor_id,
     event.timestamp,
     event.frequency.toFixed(2),
     event.classification,
+    event.severity ?? 'normal',
     event.sensor?.region ?? 'UNSPECIFIED',
   ])
 
