@@ -10,20 +10,20 @@ import org.example.websocket.InfrastructureWebSocketHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.socket.WebSocketMessage;
-import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.util.retry.Retry;
 
-import java.net.URI;
 import java.time.Duration;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 
 /**
- * Connects to the Go broker's WebSocket endpoint (/backend/ws) and listens for
+ * Connects to the Go broker's SSE endpoint (/backend/sse) and listens for
  * ReplicaStatusEvent messages. Each message is persisted to Neo4j via MERGE so
  * every Replica node is kept up-to-date with its latest availability status.
  *
@@ -31,21 +31,38 @@ import java.time.format.DateTimeParseException;
  *   { "replica_id": "...", "status": "connected"|"disconnected", "timestamp": "..." }
  */
 @Service
-public class BrokerWebSocketClient {
+public class BrokerSSEClient {
 
-    private static final Logger log = LoggerFactory.getLogger(BrokerWebSocketClient.class);
+    private static final Logger log = LoggerFactory.getLogger(BrokerSSEClient.class);
 
     private final ReplicaRepository replicaRepository;
     private final InfrastructureWebSocketHandler infrastructureWebSocketHandler;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${broker.ws-url:ws://broker:9090/backend/ws}")
-    private String brokerWsUrl;
+    @Value("${broker.sse-url:http://broker:9090/backend/sse}")
+    private String brokerSseUrl;
 
-    public BrokerWebSocketClient(ReplicaRepository replicaRepository,
+    public BrokerSSEClient(ReplicaRepository replicaRepository,
                                  InfrastructureWebSocketHandler infrastructureWebSocketHandler) {
         this.replicaRepository = replicaRepository;
         this.infrastructureWebSocketHandler = infrastructureWebSocketHandler;
+    }
+
+    /**
+     * Opens the SSE connection to the broker and returns a stream of raw JSON strings.
+     * Does not process messages — only handles transport and reconnection.
+     */
+    private Flux<String> streamFromBroker() {
+        return WebClient.create(brokerSseUrl)
+                .get()
+                .retrieve()
+                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {})
+                .mapNotNull(ServerSentEvent::data)
+                .filter(data -> !data.isBlank())
+                .doOnError(e -> log.warn("Broker SSE error: {}", e.getMessage()))
+                .retryWhen(Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(5))
+                        .maxBackoff(Duration.ofSeconds(30))
+                        .doBeforeRetry(s -> log.warn("Reconnecting to broker SSE (attempt {})...", s.totalRetries() + 1)));
     }
 
     @PostConstruct
@@ -54,24 +71,14 @@ public class BrokerWebSocketClient {
         replicaRepository.deleteAllWithDisconnections();
         log.info("Stale replicas cleared.");
 
-        ReactorNettyWebSocketClient client = new ReactorNettyWebSocketClient();
+        streamFromBroker()
+                .doOnNext(this::handleMessage)
+                .subscribe(
+                        null,
+                        e -> log.error("Broker SSE stream terminated permanently: {}", e.getMessage())
+                );
 
-        client.execute(URI.create(brokerWsUrl), session ->
-                session.receive()
-                        .map(WebSocketMessage::getPayloadAsText)
-                        .doOnNext(this::handleMessage)
-                        .doOnError(e -> log.warn("Broker WS error: {}", e.getMessage()))
-                        .then()
-        )
-        .retryWhen(Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(5))
-                .maxBackoff(Duration.ofSeconds(30))
-                .doBeforeRetry(s -> log.warn("Reconnecting to broker WS (attempt {})...", s.totalRetries() + 1)))
-        .subscribe(
-                null,
-                e -> log.error("Broker WS stream terminated permanently: {}", e.getMessage())
-        );
-
-        log.info("Broker WS client started → {}", brokerWsUrl);
+        log.info("Broker SSE client started → {}", brokerSseUrl);
     }
 
     private void handleMessage(String raw) {
@@ -102,11 +109,11 @@ public class BrokerWebSocketClient {
             }
 
             replicaRepository.save(replica);
-                infrastructureWebSocketHandler.broadcastReplicaStatus(
+            infrastructureWebSocketHandler.broadcastReplicaStatus(
                     replicaId,
                     status,
                     eventTime.toInstant().toString()
-                );
+            );
             log.info("Replica {} → {}", replicaId, status);
 
         } catch (Exception e) {

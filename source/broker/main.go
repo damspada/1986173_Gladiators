@@ -51,8 +51,8 @@ func main() {
 	// esponi l'endpoint SSE per le repliche
 	http.HandleFunc("/stream", hub.handleSSE)
 
-	// esponi il WebSocket per il backend (stato delle repliche)
-	http.HandleFunc("/backend/ws", backendHub.handleBackendWS)
+	// esponi l'endpoint SSE per il backend (stato delle repliche)
+	http.HandleFunc("/backend/sse", backendHub.handleBackendSSE)
 
 	// avvia il server HTTP in background così le repliche possono connettersi subito
 	go func() {

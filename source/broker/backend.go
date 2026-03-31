@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"sync"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 // ReplicaStatusEvent è il messaggio mandato al backend quando una replica si connette/disconnette
@@ -17,45 +15,50 @@ type ReplicaStatusEvent struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// BackendHub gestisce le connessioni WebSocket del backend
+// BackendHub gestisce le connessioni SSE del backend
 type BackendHub struct {
-	sessions map[*websocket.Conn]struct{}
-	mu       sync.RWMutex
+	clients map[chan []byte]struct{}
+	mu      sync.RWMutex
 }
 
 func newBackendHub() *BackendHub {
 	return &BackendHub{
-		sessions: make(map[*websocket.Conn]struct{}),
+		clients: make(map[chan []byte]struct{}),
 	}
 }
 
-var wsUpgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
-}
-
-// handleBackendWS gestisce la connessione WebSocket dal backend
-func (b *BackendHub) handleBackendWS(w http.ResponseWriter, r *http.Request) {
-	conn, err := wsUpgrader.Upgrade(w, r, nil)
-	if err != nil {
-		fmt.Printf("Errore upgrade WebSocket backend: %v\n", err)
+// handleBackendSSE gestisce la connessione SSE dal backend
+func (b *BackendHub) handleBackendSSE(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "SSE not supported", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	ch := make(chan []byte, 16)
+
+	b.mu.Lock()
+	b.clients[ch] = struct{}{}
+	b.mu.Unlock()
+	fmt.Println("Backend connesso via SSE")
+
 	defer func() {
 		b.mu.Lock()
-		delete(b.sessions, conn)
+		delete(b.clients, ch)
 		b.mu.Unlock()
-		conn.Close()
 		fmt.Println("Backend disconnesso")
 	}()
 
-	b.mu.Lock()
-	b.sessions[conn] = struct{}{}
-	b.mu.Unlock()
-	fmt.Println("Backend connesso via WebSocket")
-
-	// tieni la connessione aperta leggendo (e scartando) eventuali ping
 	for {
-		if _, _, err := conn.ReadMessage(); err != nil {
+		select {
+		case data := <-ch:
+			fmt.Fprintf(w, "data: %s\n\n", data)
+			flusher.Flush()
+		case <-r.Context().Done():
 			return
 		}
 	}
@@ -76,9 +79,11 @@ func (b *BackendHub) notifyReplicaStatus(replicaID, status string) {
 
 	b.mu.RLock()
 	defer b.mu.RUnlock()
-	for conn := range b.sessions {
-		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
-			fmt.Printf("Errore invio status al backend: %v\n", err)
+	for ch := range b.clients {
+		select {
+		case ch <- data:
+		default:
+			// client troppo lento, salto
 		}
 	}
 }
