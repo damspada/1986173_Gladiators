@@ -289,15 +289,30 @@ Standard Neo4j setup with Cypher queries.
 
 ## Standard Event Schema
 
-- id, source, type, severity, timestamp, location, magnitude, classification, confidence, metadata
+- id: unique string (MD5 hash of sensor_id + timestamp)
+- source: string (sensor_id, e.g., sensor-123)
+- type: string (EARTHQUAKE, CONVENTIONAL_EXPLOSION, NUCLEAR_EVENT)
+- timestamp: ISO8601 UTC
+- location:
+  - lat: number
+  - lon: number
+- frequency: float (dominant frequency from FFT analysis)
+- classification: string (same as type: EARTHQUAKE, CONVENTIONAL_EXPLOSION, NUCLEAR_EVENT)
+- confirmed: boolean (true if consensus reached)
+- sensorId: string (same as source)
+- region: string
 
 ## Rule Model
 
-- id, name, description, trigger, thresholds, window, actions, enabled
+The rule model is not yet implemented in the current codebase. Classification is based on fixed frequency thresholds in the analyzer (0.5-3.0 Hz: EARTHQUAKE, 3.0-8.0 Hz: CONVENTIONAL_EXPLOSION, >=8.0 Hz: NUCLEAR_EVENT). Future enhancements may include dynamic rules for alerts and actions.
 
 # DATABASE:
 
-- events table, sensors table, replicas table, rules table, alerts table
+- SeismicEvent nodes (id, timestamp, frequency, classification, confirmed, sensorId, region, lat, lon)
+- Sensor nodes (id, lat, lon, region)
+- Region nodes (name)
+- Replica nodes (id, status, uptime)
+- Relationships: DETECTED (Sensor -> Event), OCCURRED_IN (Event -> Region), REPORTED (Replica -> Event)
 
 # WORKFLOW:
 

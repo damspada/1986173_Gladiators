@@ -60,64 +60,39 @@
 
 In this system context, the standard event schema defines the common format for all events flowing through the pipeline (ingest, broker, replica, UI).
 
-- id: unique string
-- source: string (e.g., sensor-123, simulator)
-- type: string (EARTHQUAKE, EXPLOSION, NUCLEAR, HEARTBEAT, DISCONNECTION, etc.)
-- severity: int (1..10 or string levels: LOW, MEDIUM, HIGH)
+- id: unique string (MD5 hash of sensor_id + timestamp)
+- source: string (sensor_id, e.g., sensor-123)
+- type: string (EARTHQUAKE, CONVENTIONAL_EXPLOSION, NUCLEAR_EVENT)
 - timestamp: ISO8601 UTC
 - location:
   - lat: number
   - lon: number
-  - depth: number (km, optional)
-- magnitude: float (e.g., event magnitude, optional)
-- classification: string (Earthquake, ConventionalExplosion, Nuclear)
-- confidence: float 0..1
-- metadata: free-form object (e.g., sensor firmware, version, replicaId)
+- frequency: float (dominant frequency from FFT analysis)
+- classification: string (same as type: EARTHQUAKE, CONVENTIONAL_EXPLOSION, NUCLEAR_EVENT)
+- confirmed: boolean (true if consensus reached)
+- sensorId: string (same as source)
+- region: string
 
 Example JSON:
 
 ```json
 {
-  "id": "evt-0001",
+  "id": "a1b2c3d4e5f6...",
   "source": "sensor-42",
   "type": "EARTHQUAKE",
-  "severity": "HIGH",
   "timestamp": "2026-03-30T12:34:56.123Z",
-  "location": {"lat": 46.12, "lon": 11.35, "depth": 12.8},
-  "magnitude": 5.8,
-  "classification": "Earthquake",
-  "confidence": 0.94,
-  "metadata": {"sensorModel": "GL-1", "region": "Alps"}
+  "location": {"lat": 46.12, "lon": 11.35},
+  "frequency": 2.5,
+  "classification": "EARTHQUAKE",
+  "confirmed": true,
+  "sensorId": "sensor-42",
+  "region": "Alps"
 }
 ```
 
 ## Rule model
 
-The rule model defines detection/alert rules applied to the data stream to trigger actions (UI alerts, notifications, escalation). Each rule is an object with:
-
-- id: unique string
-- name: descriptive string
-- description: optional string
-- trigger: boolean condition (e.g., `type == 'NUCLEAR' && confidence >= 0.8`)
-- thresholds: structured field objects (e.g., magnitude, severity, event count)
-- window: time duration (e.g., 1m, 5m, 1h) for aggregation
-- actions: array (broadcast-alert, store-event, notify-operator, ack)
-- enabled: boolean
-
-Example JSON:
-
-```json
-{
-  "id": "rule-01",
-  "name": "Nuclear risk high",
-  "description": "Alert when a NUCLEAR event appears with high confidence",
-  "trigger": "event.type == 'NUCLEAR' && event.confidence >= 0.8",
-  "thresholds": {"confidence": 0.8, "severity": "HIGH"},
-  "window": "1m",
-  "actions": ["notify-ops", "log-event", "flash-ui"],
-  "enabled": true
-}
-```
+Classification is based on fixed frequency thresholds in the analyzer (0.5-3.0 Hz: EARTHQUAKE, 3.0-8.0 Hz: CONVENTIONAL_EXPLOSION, >=8.0 Hz: NUCLEAR_EVENT).
 
 ### How to use them
 
