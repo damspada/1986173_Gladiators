@@ -251,19 +251,68 @@ Standard Neo4j setup with Cypher queries.
 	| ----------- | --- | ----------- | ------------ |
     | - | - | Database queries | all |
 
-# DATA MODELS:
+## CONTAINER_NAME: Database
+
+### DESCRIPTION: 
+Stores events, sensors, replicas, and rules data.
+
+### USER STORIES:
+- all (data persistence)
+
+### PORTS: 
+7687:7687 (Neo4j)
+
+### DESCRIPTION:
+The Database container manages persistent storage using Neo4j graph database for events and relationships.
+
+### PERSISTANCE EVALUATION
+The Database container provides persistent storage for all system data.
+
+### EXTERNAL SERVICES CONNECTIONS
+The Database container is connected by Backend-API and Processing-Replica.
+
+### MICROSERVICES:
+
+#### MICROSERVICE: neo4j
+- TYPE: database
+- DESCRIPTION: Graph database for storing events and metadata.
+- PORTS: 7687
+- TECHNOLOGICAL SPECIFICATION:
+Neo4j graph database for data storage and querying.
+- SERVICE ARCHITECTURE:
+Standard Neo4j setup with Cypher queries.
+- ENDPOINTS:
+		
+	| HTTP METHOD | URL | Description | User Stories |
+	| ----------- | --- | ----------- | ------------ |
+    | - | - | Database queries | all |
 
 ## Standard Event Schema
 
-- id, source, type, severity, timestamp, location, magnitude, classification, confidence, metadata
+- id: unique string (MD5 hash of sensor_id + timestamp)
+- source: string (sensor_id, e.g., sensor-123)
+- type: string (EARTHQUAKE, CONVENTIONAL_EXPLOSION, NUCLEAR_EVENT)
+- timestamp: ISO8601 UTC
+- location:
+  - lat: number
+  - lon: number
+- frequency: float (dominant frequency from FFT analysis)
+- classification: string (same as type: EARTHQUAKE, CONVENTIONAL_EXPLOSION, NUCLEAR_EVENT)
+- confirmed: boolean (true if consensus reached)
+- sensorId: string (same as source)
+- region: string
 
 ## Rule Model
 
-- id, name, description, trigger, thresholds, window, actions, enabled
+The rule model is not yet implemented in the current codebase. Classification is based on fixed frequency thresholds in the analyzer (0.5-3.0 Hz: EARTHQUAKE, 3.0-8.0 Hz: CONVENTIONAL_EXPLOSION, >=8.0 Hz: NUCLEAR_EVENT). Future enhancements may include dynamic rules for alerts and actions.
 
 # DATABASE:
 
-- events table, sensors table, replicas table, rules table, alerts table
+- SeismicEvent nodes (id, timestamp, frequency, classification, confirmed, sensorId, region, lat, lon)
+- Sensor nodes (id, lat, lon, region)
+- Region nodes (name)
+- Replica nodes (id, status, uptime)
+- Relationships: DETECTED (Sensor -> Event), OCCURRED_IN (Event -> Region), REPORTED (Replica -> Event)
 
 # WORKFLOW:
 
