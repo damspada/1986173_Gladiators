@@ -251,7 +251,41 @@ Standard Neo4j setup with Cypher queries.
 	| ----------- | --- | ----------- | ------------ |
     | - | - | Database queries | all |
 
-# DATA MODELS:
+## CONTAINER_NAME: Database
+
+### DESCRIPTION: 
+Stores events, sensors, replicas, and rules data.
+
+### USER STORIES:
+- all (data persistence)
+
+### PORTS: 
+7687:7687 (Neo4j)
+
+### DESCRIPTION:
+The Database container manages persistent storage using Neo4j graph database for events and relationships.
+
+### PERSISTANCE EVALUATION
+The Database container provides persistent storage for all system data.
+
+### EXTERNAL SERVICES CONNECTIONS
+The Database container is connected by Backend-API and Processing-Replica.
+
+### MICROSERVICES:
+
+#### MICROSERVICE: neo4j
+- TYPE: database
+- DESCRIPTION: Graph database for storing events and metadata.
+- PORTS: 7687
+- TECHNOLOGICAL SPECIFICATION:
+Neo4j graph database for data storage and querying.
+- SERVICE ARCHITECTURE:
+Standard Neo4j setup with Cypher queries.
+- ENDPOINTS:
+		
+	| HTTP METHOD | URL | Description | User Stories |
+	| ----------- | --- | ----------- | ------------ |
+    | - | - | Database queries | all |
 
 ## Standard Event Schema
 
