@@ -3,8 +3,6 @@ package org.example.service;
 import org.example.dto.SimulatorEventDto;
 import org.example.model.Classification;
 import org.example.model.Event;
-import org.example.model.Region;
-import org.example.model.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,7 +47,7 @@ public class EventIngestionService {
                 .retryWhen(Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(5))
                         .doBeforeRetry(s -> log.warn("Retrying simulator connection (attempt {})", s.totalRetries() + 1)))
                 .subscribe(
-                        eventService::save,
+                        event -> {},
                         error -> log.error("Ingestion stream terminated: {}", error.getMessage())
                 );
     }
@@ -61,12 +59,8 @@ public class EventIngestionService {
                     Instant.parse(dto.timestamp()).atOffset(ZoneOffset.UTC).toZonedDateTime(),
                     dto.frequency(),
                     Classification.fromFrequency(dto.frequency()),
-                    dto.lat(),
-                    dto.lon(),
                     dto.sensorId(),
-                    dto.region(),
-                    new Sensor(dto.sensorId()),
-                    new Region(dto.region())
+                    "simulator"
             );
         } catch (Exception e) {
             log.warn("Skipping malformed simulator event {}: {}", dto.eventId(), e.getMessage());

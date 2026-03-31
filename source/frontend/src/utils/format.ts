@@ -1,11 +1,45 @@
 import type { SeismicEvent } from '../types/seismic'
 
-export const formatUtcTimestamp = (iso: string): string => {
+const getTzAbbr = (date: Date, tz: string): string => {
+  if (tz === 'UTC') return 'UTC'
+  try {
+    const part = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'short' })
+      .formatToParts(date)
+      .find((p) => p.type === 'timeZoneName')
+    return part?.value ?? tz
+  } catch {
+    return tz
+  }
+}
+
+export const formatUtcTimestamp = (iso: string, tz = 'UTC'): string => {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) {
-    return 'INVALID UTC'
+    return 'INVALID'
   }
-  return date.toISOString().replace('T', ' ').replace('Z', ' UTC')
+  if (tz === 'UTC') {
+    return date.toISOString().replace('T', '\u00a0').replace('Z', '\u00a0UTC')
+  }
+  try {
+    const parts: Record<string, string> = {}
+    for (const { type, value } of new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(date)) {
+      parts[type] = value
+    }
+    const ms = String(date.getMilliseconds()).padStart(3, '0')
+    const abbr = getTzAbbr(date, tz)
+    return `${parts.year}-${parts.month}-${parts.day}\u00a0${parts.hour}:${parts.minute}:${parts.second}.${ms}\u00a0${abbr}`
+  } catch {
+    return date.toISOString().replace('T', '\u00a0').replace('Z', '\u00a0UTC')
+  }
 }
 
 export const formatFrequency = (value: number): string => `${value.toFixed(2)} Hz`

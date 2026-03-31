@@ -24,8 +24,11 @@ export interface SeismicEvent {
   startsAt?: string
   endsAt?: string
   durationSeconds?: number
+  /** Average frequency across all reporting replicas */
   frequency: number
   classification: EventClassification
+  confirmed?: boolean
+  reporter_count?: number
   severity?: 'normal' | 'warning' | 'critical'
   amplitude?: number
   sensor?: SensorMeta

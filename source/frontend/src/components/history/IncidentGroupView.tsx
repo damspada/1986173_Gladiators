@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import { ZoneNavLink } from '../common/ZoneNavLink'
 import { classificationLabel, classificationBadgeClass } from '../../utils/classification'
 import { formatUtcTimestamp, formatFrequency } from '../../utils/format'
+import { useTimezone } from '../../contexts/TimezoneContext'
 import { fetchIncidentClusters } from '../../services/historyApi'
 import type { IncidentCluster } from '../../utils/incidents'
 import type { HistoryFilters, HistoryTimeFilter, SeismicEvent } from '../../types/seismic'
@@ -30,6 +31,7 @@ const formatSpan = (from: string, to: string): string => {
 }
 
 export const IncidentGroupView = ({ onSelectEvent, filters, timeFilter }: IncidentGroupViewProps) => {
+  const { timezone } = useTimezone()
   const [windowMinutes, setWindowMinutes] = useState(10)
   const [clusters, setClusters] = useState<IncidentCluster[]>([])
   const [loading, setLoading] = useState(false)
@@ -134,7 +136,7 @@ export const IncidentGroupView = ({ onSelectEvent, filters, timeFilter }: Incide
                     {cluster.count} event{cluster.count !== 1 ? 's' : ''}
                   </span>
                   <span className="font-mono text-[11px] text-zinc-500" title="Cluster detected at">
-                    {formatUtcTimestamp(cluster.clusterTime)}
+                    {formatUtcTimestamp(cluster.clusterTime, timezone)}
                   </span>
                 </div>
                 <div className="flex shrink-0 items-center gap-3 text-[11px] text-zinc-400">
@@ -170,7 +172,7 @@ export const IncidentGroupView = ({ onSelectEvent, filters, timeFilter }: Incide
                           className="cursor-pointer text-zinc-300 transition hover:bg-zinc-800/40 hover:text-zinc-100"
                         >
                           <td className="py-0.5 pr-3 font-mono text-zinc-400">
-                            {formatUtcTimestamp(event.timestamp)}
+                            {formatUtcTimestamp(event.timestamp, timezone)}
                           </td>
                           <td className="py-0.5 pr-3">{event.sensor_id}</td>
                           <td className="py-0.5 pr-3">

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { DisconnectEvent, InfrastructureStatus, ReplicaDisconnectionEvent } from '../types/seismic'
 import { fetchReplicaDisconnections } from '../services/historyApi'
 import { formatUtcTimestamp } from '../utils/format'
+import { useTimezone } from '../contexts/TimezoneContext'
 
 const resolveInfrastructureWsUrl = (historyApiUrl?: string): string => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -28,6 +29,7 @@ interface InfrastructurePageProps {
 }
 
 export const InfrastructurePage = ({ historyApiUrl, disconnectHistory = [] }: InfrastructurePageProps) => {
+  const { timezone } = useTimezone()
   const [infrastructure, setInfrastructure] = useState<InfrastructureStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -336,7 +338,7 @@ export const InfrastructurePage = ({ historyApiUrl, disconnectHistory = [] }: In
                       className="border-b border-zinc-800/60 text-zinc-300 transition hover:bg-zinc-800/30"
                     >
                       <td className="py-2 pr-4 font-mono text-cyan-300/80">{ev.replica_id}</td>
-                      <td className="py-2 pr-4 font-mono text-zinc-400">{ev.timestamp ? formatUtcTimestamp(ev.timestamp) : '—'}</td>
+                      <td className="py-2 pr-4 font-mono text-zinc-400">{ev.timestamp ? formatUtcTimestamp(ev.timestamp, timezone) : '—'}</td>
                       <td className="py-2 pr-4">
                         <span className={ev.duration_seconds < 0 ? 'text-zinc-500' : ev.duration_seconds > 300 ? 'text-rose-300' : 'text-amber-300'}>
                           {durationLabel}

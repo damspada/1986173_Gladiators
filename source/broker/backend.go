@@ -19,6 +19,7 @@ type ReplicaStatusEvent struct {
 type BackendHub struct {
 	clients map[chan []byte]struct{}
 	mu      sync.RWMutex
+	hub     *Hub // riferimento all'hub replica per lo snapshot iniziale
 }
 
 func newBackendHub() *BackendHub {
@@ -45,6 +46,25 @@ func (b *BackendHub) handleBackendSSE(w http.ResponseWriter, r *http.Request) {
 	b.clients[ch] = struct{}{}
 	b.mu.Unlock()
 	fmt.Println("Backend connesso via SSE")
+
+	// invia snapshot delle repliche già connesse al momento della connessione
+	if b.hub != nil {
+		now := time.Now().UTC().Format(time.RFC3339)
+		for _, id := range b.hub.getConnectedIDs() {
+			event := ReplicaStatusEvent{
+				ReplicaID: id,
+				Status:    "connected",
+				Timestamp: now,
+			}
+			data, err := json.Marshal(event)
+			if err == nil {
+				select {
+				case ch <- data:
+				default:
+				}
+			}
+		}
+	}
 
 	defer func() {
 		b.mu.Lock()

@@ -3,6 +3,7 @@ import { type MouseEvent as ReactMouseEvent, type WheelEvent as ReactWheelEvent,
 import { SensorNavLink } from '../common/SensorNavLink'
 import { classificationLabel } from '../../utils/classification'
 import { formatUtcTimestamp } from '../../utils/format'
+import { useTimezone } from '../../contexts/TimezoneContext'
 import type { SeismicEvent } from '../../types/seismic'
 
 interface EventTimelineProps {
@@ -60,6 +61,7 @@ const formatAxisUtc = (ms: number): string => {
 }
 
 export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => {
+  const { timezone } = useTimezone()
   const orderedEvents = useMemo(
     () => [...events].sort((a, b) => getStartsAtMs(a) - getStartsAtMs(b)),
     [events],
@@ -398,7 +400,7 @@ export const EventTimeline = ({ events, onSelectEvent }: EventTimelineProps) => 
                           <p className="mt-1">Type: {classificationLabel[event.classification]}</p>
                           <p>Frequency: {event.frequency.toFixed(2)} Hz</p>
                           <p>Amplitude: {event.amplitude?.toFixed(2) ?? 'N/A'}</p>
-                          <p className="mt-1 text-zinc-300">Start: {formatUtcTimestamp(event.startsAt ?? event.timestamp)}</p>
+                          <p className="mt-1 text-zinc-300">Start: {formatUtcTimestamp(event.startsAt ?? event.timestamp, timezone)}</p>
                           {durationSeconds ? <p className="text-zinc-300">Duration: {durationSeconds}s</p> : null}
                         </div>
                       </div>

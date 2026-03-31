@@ -4,6 +4,7 @@ import { SensorNavLink } from '../common/SensorNavLink'
 import { ZoneNavLink } from '../common/ZoneNavLink'
 import { classificationBadgeClass, classificationLabel } from '../../utils/classification'
 import { formatFrequency, formatUtcTimestamp } from '../../utils/format'
+import { useTimezone } from '../../contexts/TimezoneContext'
 import type { SeismicEvent } from '../../types/seismic'
 
 interface LiveEventFeedProps {
@@ -12,6 +13,7 @@ interface LiveEventFeedProps {
 }
 
 export const LiveEventFeed = ({ events, onSelectEvent }: LiveEventFeedProps) => {
+  const { timezone } = useTimezone()
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const noticeTimerRef = useRef<number | null>(null)
   const streamSeenEventIdsRef = useRef<Set<string>>(new Set(events.map((event) => event.event_id)))
@@ -215,7 +217,7 @@ export const LiveEventFeed = ({ events, onSelectEvent }: LiveEventFeedProps) => 
                       <span className="text-zinc-400">UNSPECIFIED</span>
                     )}
                   </span>
-                  <span className="live-feed-timestamp text-zinc-400">{formatUtcTimestamp(event.timestamp)}</span>
+                  <span className="live-feed-timestamp text-zinc-400">{formatUtcTimestamp(event.timestamp, timezone)}</span>
                   <span>{formatFrequency(event.frequency)}</span>
                   <span
                     className={clsx(

@@ -4,6 +4,8 @@ import { StatusDot } from '../common/StatusDot'
 import { ThemeMenu } from './ThemeMenu'
 import { AlertSettingsMenu } from './AlertSettingsMenu'
 import { useUtcClock } from '../../hooks/useUtcClock'
+import { useTimezone } from '../../contexts/TimezoneContext'
+import { formatUtcTimestamp } from '../../utils/format'
 import type { ConnectionState, EventClassification } from '../../types/seismic'
 import type { AlertPreferences, AlertSeverity } from '../../utils/alerting'
 import { alertSeverityLabel } from '../../utils/alerting'
@@ -55,10 +57,11 @@ export const CommandHeader = ({
   eventAlert,
 }: CommandHeaderProps) => {
   const utcClock = useUtcClock()
+  const { timezone } = useTimezone()
   const isTickerAlert =
     eventAlert?.classification === 'CONVENTIONAL_EXPLOSION' || eventAlert?.classification === 'NUCLEAR_LIKE'
   const eventAlertText = eventAlert
-    ? `${eventClassificationLabel[eventAlert.classification]} ${alertSeverityLabel[eventAlert.severity]} alert | Frequency ${eventAlert.frequency.toFixed(2)} Hz | ${new Date(eventAlert.triggeredAt).toUTCString()}`
+    ? `${eventClassificationLabel[eventAlert.classification]} ${alertSeverityLabel[eventAlert.severity]} alert | Frequency ${eventAlert.frequency.toFixed(2)} Hz | ${formatUtcTimestamp(eventAlert.triggeredAt, timezone)}`
     : ''
 
   return (
@@ -123,7 +126,7 @@ export const CommandHeader = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-sm border border-zinc-700 bg-zinc-900/70 px-3 py-1">UTC {utcClock}</span>
+            <span className="whitespace-nowrap rounded-sm border border-zinc-700 bg-zinc-900/70 px-3 py-1">UTC {utcClock}</span>
             <button
               type="button"
               className="rounded-sm border border-zinc-700 bg-zinc-900/70 px-3 py-1 text-[10px] tracking-[0.14em] text-zinc-300 transition hover:border-cyan-400/70 hover:text-cyan-200"

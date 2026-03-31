@@ -23,6 +23,7 @@ import {
   type AlertSeverity,
 } from './utils/alerting'
 import { playAlertTone } from './utils/alertAudio'
+import { TimezoneProvider } from './contexts/TimezoneContext'
 
 const LIVE_SOCKET_URL = (import.meta.env.VITE_LIVE_WS_URL as string | undefined)?.trim()
 const LIVE_HISTORY_URL = (import.meta.env.VITE_HISTORY_API_URL as string | undefined)?.trim()
@@ -408,7 +409,9 @@ const AppFrame = () => {
 function App() {
   return (
     <BrowserRouter>
-      <AppFrame />
+      <TimezoneProvider>
+        <AppFrame />
+      </TimezoneProvider>
     </BrowserRouter>
   )
 }

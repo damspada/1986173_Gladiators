@@ -71,6 +71,17 @@ func (h *Hub) broadcast(messaggio []byte) {
 	}
 }
 
+// getConnectedIDs restituisce uno snapshot degli ID di tutte le repliche attualmente connesse
+func (h *Hub) getConnectedIDs() []string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	ids := make([]string, 0, len(h.clients))
+	for id := range h.clients {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
 // handler SSE — chiamato quando una replica si connette
 func (h *Hub) handleSSE(w http.ResponseWriter, r *http.Request) {
 	// imposta gli header SSE obbligatori

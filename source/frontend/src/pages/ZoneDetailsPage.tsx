@@ -5,6 +5,7 @@ import { SensorNavLink } from '../components/common/SensorNavLink'
 import { EventTimeline } from '../components/history/EventTimeline'
 import { classificationBadgeClass, classificationLabel } from '../utils/classification'
 import { formatFrequency, formatUtcTimestamp } from '../utils/format'
+import { useTimezone } from '../contexts/TimezoneContext'
 import { fetchHistoryEvents } from '../services/historyApi'
 import type { SeismicEvent, SensorMeta } from '../types/seismic'
 
@@ -23,6 +24,7 @@ const buildEventKey = (event: SeismicEvent): string => {
 }
 
 export const ZoneDetailsPage = ({ sensors, liveEvents, onSelectEvent }: ZoneDetailsPageProps) => {
+  const { timezone } = useTimezone()
   const { zoneId: rawZoneId } = useParams()
   const zone = useMemo(() => decodeURIComponent(rawZoneId ?? '').trim(), [rawZoneId])
   const [historyEvents, setHistoryEvents] = useState<SeismicEvent[]>([])
@@ -148,7 +150,7 @@ export const ZoneDetailsPage = ({ sensors, liveEvents, onSelectEvent }: ZoneDeta
         <div className="tactical-panel p-3">
           <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">Latest event</p>
           <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-zinc-100">
-            {latestEvent ? formatUtcTimestamp(latestEvent.startsAt ?? latestEvent.timestamp) : 'Not available'}
+            {latestEvent ? formatUtcTimestamp(latestEvent.startsAt ?? latestEvent.timestamp, timezone) : 'Not available'}
           </p>
         </div>
       </section>
@@ -198,7 +200,7 @@ export const ZoneDetailsPage = ({ sensors, liveEvents, onSelectEvent }: ZoneDeta
                       <span>
                         <SensorNavLink sensorId={event.sensor_id} className="px-0 py-0 text-zinc-100 hover:text-cyan-200" />
                       </span>
-                      <span className="text-zinc-400">{formatUtcTimestamp(event.startsAt ?? event.timestamp)}</span>
+                      <span className="text-zinc-400">{formatUtcTimestamp(event.startsAt ?? event.timestamp, timezone)}</span>
                       <span>{formatFrequency(event.frequency)}</span>
                       <span className={clsx('inline-flex max-w-fit rounded-sm border px-2 py-1 text-[10px] uppercase tracking-[0.08em]', classificationBadgeClass[event.classification])}>
                         {classificationLabel[event.classification]}

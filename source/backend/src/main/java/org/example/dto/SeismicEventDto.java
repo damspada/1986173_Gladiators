@@ -3,7 +3,7 @@ package org.example.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.example.model.Classification;
-import org.example.model.Event;
+import org.example.model.Reporting;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record SeismicEventDto(
@@ -18,35 +18,38 @@ public record SeismicEventDto(
         String region,
         SensorMetaDto sensor
 ) {
-    public static SeismicEventDto forRealtime(Event e) {
+    public static SeismicEventDto fromReporting(Reporting r) {
+        Classification cls = null;
+        try { cls = Classification.valueOf(r.getClassification()); } catch (Exception ignored) {}
         return new SeismicEventDto(
-                e.getEventId(),
-                e.getSensorId(),
-                e.getTimestamp() != null ? e.getTimestamp().toInstant().toString() : null,
-                e.getFrequency(),
-                e.getClassification(),
-                e.isConfirmed(),
-                e.getLat(),
-                e.getLon(),
-                e.getRegion(),
+                r.getReportingId(),
+                r.getSensorId(),
+                r.getTimestamp() != null ? r.getTimestamp().toInstant().toString() : null,
+                r.getAvgFrequency(),
+                cls,
+                r.isConfirmed(),
+                r.getLat(),
+                r.getLon(),
+                r.getRegion(),
+                new SensorMetaDto(r.getSensorId(), r.getLat(), r.getLon(), r.getRegion())
+        );
+    }
+
+    public static SeismicEventDto forBroadcast(ReplicaEventDto dto) {
+        Classification cls = null;
+        try { cls = Classification.valueOf(dto.type()); } catch (Exception ignored) {}
+        return new SeismicEventDto(
+                dto.eventId(),
+                dto.sensorId(),
+                dto.timestamp(),
+                dto.frequency(),
+                cls,
+                false,
+                dto.lat(),
+                dto.lon(),
+                dto.region(),
                 null
         );
     }
-
-    public static SeismicEventDto forHistory(Event e) {
-        return new SeismicEventDto(
-                e.getEventId(),
-                e.getSensorId(),
-                e.getTimestamp() != null ? e.getTimestamp().toInstant().toString() : null,
-                e.getFrequency(),
-                e.getClassification(),
-                e.isConfirmed(),
-                e.getLat(),
-                e.getLon(),
-                e.getRegion(),
-                new SensorMetaDto(e.getSensorId(), e.getLat(), e.getLon(), e.getRegion())
-        );
-    }
 }
-
 

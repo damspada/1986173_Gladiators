@@ -152,10 +152,15 @@ const mapBackendSeverity = (severity: string): import('../types/seismic').EventC
 export interface EventCorroboration {
   event_id: string
   classification: string
+  avg_frequency: number
   region: string
   confirmed: boolean
   reporter_count: number
   replica_ids: string[]
+  /** Per-replica detected frequencies (same order as replica_ids) */
+  frequencies: number[]
+  /** Per-replica classifications, e.g. EARTHQUAKE / NUCLEAR_EVENT (same order as replica_ids) */
+  classifications: string[]
   detected_ats: string[]
 }
 

@@ -93,20 +93,20 @@ async def handle_detection(app, event, timestamp, metadata):
     """
     Delegates persistence of a detected seismic event to the Neo4j repository,
     then notifies the backend so it can broadcast via WebSocket to frontends.
+    Uses the aggregated reporting data (avg frequency, highest classification)
+    returned by the Cypher query rather than the individual replica's values.
     """
-    import hashlib
-    await app.state.repo.save_seismic_event(event, timestamp, metadata)
+    result = await app.state.repo.save_seismic_event(event, timestamp, metadata)
+    if not result:
+        return
 
     # Notify the backend for real-time WebSocket broadcast
-    unique_id = hashlib.md5(
-        f"{event['sensor_id']}-{timestamp[:16]}".encode()
-    ).hexdigest()
     try:
         await http_client.post(f"{BACKEND_URL}/api/events", json={
-            "event_id": unique_id,
+            "event_id": result["reporting_id"],
             "sensor_id": event["sensor_id"],
-            "type": event["event_type"],
-            "frequency": event["dominant_frequency"],
+            "type": result["classification"],
+            "frequency": result["avg_frequency"],
             "timestamp": timestamp,
             "window_size_sec": 0,
             "lat": metadata.get("lat", 0.0),

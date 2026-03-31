@@ -47,6 +47,7 @@ func main() {
 
 	// crea l'hub che gestisce le repliche
 	hub := newHub(backendHub, bufferSize)
+	backendHub.hub = hub // consente lo snapshot delle repliche alla connessione del backend
 
 	// esponi l'endpoint SSE per le repliche
 	http.HandleFunc("/stream", hub.handleSSE)

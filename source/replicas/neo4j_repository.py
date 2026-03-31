@@ -21,6 +21,8 @@ _MAJORITY_THRESHOLD = REPLICA_COUNT // 2 + 1
 _CONSTRAINTS = [
     ("CREATE CONSTRAINT seismic_event_id IF NOT EXISTS "
      "FOR (e:SeismicEvent) REQUIRE e.eventId IS UNIQUE"),
+    ("CREATE CONSTRAINT reporting_id IF NOT EXISTS "
+     "FOR (r:Reporting) REQUIRE r.reportingId IS UNIQUE"),
     ("CREATE CONSTRAINT sensor_id IF NOT EXISTS "
      "FOR (s:Sensor) REQUIRE s.sensorId IS UNIQUE"),
     ("CREATE CONSTRAINT region_name IF NOT EXISTS "
@@ -32,10 +34,13 @@ _CONSTRAINTS = [
 # Graph query that builds the full relationship model on every detected event.
 #
 # Graph shape produced:
-#   (:Replica)-[:REPORTED]->(:SeismicEvent)-[:OCCURRED_IN]->(:Region)
-#   (:Sensor)-[:DETECTED]->(:SeismicEvent)
+#   (:Replica)-[:DETECTED]->(:SeismicEvent)-[:PART_OF]->(:Reporting)-[:OCCURRED_IN]->(:Region)
+#   (:Sensor)-[:OBSERVED]->(:Reporting)
 #   (:Sensor)-[:LOCATED_IN]->(:Region)
-#   (:Region)-[:CONFIRMED]->(:SeismicEvent)   ← only once majority threshold is reached
+#   (:Region)-[:CONFIRMED]->(:Reporting)   ← only once majority threshold is reached
+#
+# SeismicEvent = individual detection by one replica (frequency + classification).
+# Reporting    = aggregated physical event (avg frequency, highest classification).
 #
 # * MERGE ensures every node and relationship is created at most once, so the
 #   query is fully idempotent even when multiple replicas detect the same event.
@@ -50,45 +55,66 @@ MERGE (replica:Replica {replicaId: $replica_id})
 
 MERGE (sensor)-[:LOCATED_IN]->(region)
 
+// --- Individual detection (one per replica per physical event) ---
 MERGE (event:SeismicEvent {eventId: $event_id})
 ON CREATE SET
     event.timestamp      = $timestamp,
     event.frequency      = $frequency,
     event.classification = $classification,
     event.sensorId       = $sensor_id,
-    event.region         = $region,
-    event.lat            = $lat,
-    event.lon            = $lon,
-    event.location       = point({latitude: $lat, longitude: $lon})
+    event.replicaId      = $replica_id
 
-// Add classification as an extra label so Neo4j Browser can assign a distinct
-// colour and size per event type. SET inside FOREACH is idempotent (no-op if the
-// label already exists), so this is safe to run on every replica write.
-FOREACH (_ IN CASE WHEN $classification = 'EARTHQUAKE'             THEN [1] ELSE [] END | SET event:EARTHQUAKE)
-FOREACH (_ IN CASE WHEN $classification = 'CONVENTIONAL_EXPLOSION' THEN [1] ELSE [] END | SET event:CONVENTIONAL_EXPLOSION)
-FOREACH (_ IN CASE WHEN $classification = 'NUCLEAR_EVENT'          THEN [1] ELSE [] END | SET event:NUCLEAR_EVENT)
+MERGE (replica)-[:DETECTED]->(event)
 
-MERGE (event)-[:OCCURRED_IN]->(region)
-MERGE (sensor)-[:DETECTED]->(event)
-MERGE (replica)-[reported:REPORTED]->(event)
-ON CREATE SET reported.detectedAt = $timestamp
+// --- Aggregated reporting (one per physical event) ---
+MERGE (reporting:Reporting {reportingId: $reporting_id})
+ON CREATE SET
+    reporting.timestamp = $timestamp,
+    reporting.sensorId  = $sensor_id,
+    reporting.region    = $region,
+    reporting.lat       = $lat,
+    reporting.lon       = $lon,
+    reporting.location  = point({latitude: $lat, longitude: $lon})
 
-// Majority confirmation: count all replicas that have REPORTED this event.
-// FOREACH acts as a conditional MERGE — idempotent if the relationship already exists.
-WITH event, region
-MATCH (r:Replica)-[:REPORTED]->(event)
-WITH event, region, count(r) AS reporters
+MERGE (event)-[:PART_OF]->(reporting)
+MERGE (sensor)-[:OBSERVED]->(reporting)
+MERGE (reporting)-[:OCCURRED_IN]->(region)
+
+// Recalculate aggregated fields from ALL linked individual events.
+// Highest classification = most severe (NUCLEAR > CONVENTIONAL > EARTHQUAKE).
+// Avg frequency = mean of all individual dominant frequencies.
+WITH reporting, region
+MATCH (e:SeismicEvent)-[:PART_OF]->(reporting)
+WITH reporting, region,
+     avg(e.frequency)          AS avgFreq,
+     collect(e.classification) AS classifications,
+     count(e)                  AS reporters
+
+SET reporting.avgFrequency  = avgFreq,
+    reporting.classification = CASE
+        WHEN 'NUCLEAR_EVENT' IN classifications THEN 'NUCLEAR_EVENT'
+        WHEN 'CONVENTIONAL_EXPLOSION' IN classifications THEN 'CONVENTIONAL_EXPLOSION'
+        ELSE 'EARTHQUAKE'
+    END
+
+// Classification labels for Neo4j Browser visualisation
+FOREACH (_ IN CASE WHEN reporting.classification = 'EARTHQUAKE'             THEN [1] ELSE [] END | SET reporting:EARTHQUAKE)
+FOREACH (_ IN CASE WHEN reporting.classification = 'CONVENTIONAL_EXPLOSION' THEN [1] ELSE [] END | SET reporting:CONVENTIONAL_EXPLOSION)
+FOREACH (_ IN CASE WHEN reporting.classification = 'NUCLEAR_EVENT'          THEN [1] ELSE [] END | SET reporting:NUCLEAR_EVENT)
+
+// Majority confirmation: reporters = distinct replicas that contributed an event
+WITH reporting, region, reporters
 FOREACH (_ IN CASE WHEN reporters >= $majority_threshold THEN [1] ELSE [] END |
-    MERGE (region)-[:CONFIRMED]->(event)
-    SET event.confirmed = true
+    MERGE (region)-[:CONFIRMED]->(reporting)
+    SET reporting.confirmed = true
 )
 
-// reporters = 1  → this replica is the first to write this event (new node)
-// reporters = $majority_threshold → this write is exactly the one that triggers confirmation
 RETURN
     reporters                               AS reporterCount,
     (reporters = 1)                         AS isFirstReport,
-    (reporters = $majority_threshold)       AS justConfirmed
+    (reporters = $majority_threshold)       AS justConfirmed,
+    reporting.avgFrequency                  AS avgFrequency,
+    reporting.classification                AS highestClassification
 """
 
 
@@ -132,16 +158,22 @@ class Neo4jRepository:
     async def save_seismic_event(self, event: dict, timestamp: str, metadata: dict):
         """
         Persists a detected seismic event as a fully connected graph:
-            (Replica)-[:REPORTED]->(SeismicEvent)-[:OCCURRED_IN]->(Region)
-            (Sensor)-[:DETECTED]->(SeismicEvent)
+            (Replica)-[:DETECTED]->(SeismicEvent)-[:PART_OF]->(Reporting)-[:OCCURRED_IN]->(Region)
+            (Sensor)-[:OBSERVED]->(Reporting)
             (Sensor)-[:LOCATED_IN]->(Region)
 
-        The deterministic eventId means multiple replicas detecting the same
-        physical event converge on one SeismicEvent node, each adding their
-        own REPORTED edge — enabling corroboration queries.
+        SeismicEvent is the individual detection by THIS replica.
+        Reporting is the aggregated physical event — its avgFrequency and
+        classification are recomputed from all contributing SeismicEvents
+        on every write.
+
+        Returns a dict with the aggregated reporting data, or None on failure.
         """
-        unique_id = hashlib.md5(
+        reporting_id = hashlib.md5(
             f"{event['sensor_id']}-{timestamp[:16]}".encode()
+        ).hexdigest()
+        event_id = hashlib.md5(
+            f"{reporting_id}-{self._replica_id}".encode()
         ).hexdigest()
 
         logger.info(
@@ -155,7 +187,8 @@ class Neo4jRepository:
             async with self._driver.session() as session:
                 result = await session.run(
                     _SAVE_EVENT_QUERY,
-                    event_id=unique_id,
+                    event_id=event_id,
+                    reporting_id=reporting_id,
                     sensor_id=event["sensor_id"],
                     timestamp=ts,
                     frequency=event["dominant_frequency"],
@@ -170,24 +203,39 @@ class Neo4jRepository:
 
             if record and record["isFirstReport"]:
                 logger.info(
-                    "[DB] New SeismicEvent created: id=%s type=%s sensor=%s region=%s freq=%.2f Hz",
-                    unique_id, event["event_type"], event["sensor_id"],
-                    metadata.get("region", "UNKNOWN"), event["dominant_frequency"],
+                    "[DB] New Reporting created: id=%s type=%s sensor=%s region=%s freq=%.2f Hz",
+                    reporting_id, record["highestClassification"], event["sensor_id"],
+                    metadata.get("region", "UNKNOWN"), record["avgFrequency"],
                 )
             else:
                 logger.info(
-                    "[DB] SeismicEvent corroborated: id=%s reporters=%s replica=%s",
-                    unique_id, record["reporterCount"] if record else "?", self._replica_id,
+                    "[DB] Reporting updated: id=%s reporters=%s avgFreq=%.2f class=%s replica=%s",
+                    reporting_id, record["reporterCount"] if record else "?",
+                    record["avgFrequency"] if record else 0,
+                    record["highestClassification"] if record else "?",
+                    self._replica_id,
                 )
 
             if record and record["justConfirmed"]:
                 logger.info(
-                    "[DB] SeismicEvent CONFIRMED by majority (%d/%d replicas): id=%s type=%s region=%s",
+                    "[DB] Reporting CONFIRMED by majority (%d/%d replicas): id=%s type=%s region=%s",
                     record["reporterCount"], REPLICA_COUNT,
-                    unique_id, event["event_type"], metadata.get("region", "UNKNOWN"),
+                    reporting_id, record["highestClassification"],
+                    metadata.get("region", "UNKNOWN"),
                 )
+
+            if record:
+                return {
+                    "reporting_id": reporting_id,
+                    "avg_frequency": record["avgFrequency"],
+                    "classification": record["highestClassification"],
+                    "reporter_count": record["reporterCount"],
+                    "confirmed": record.get("justConfirmed", False),
+                }
+            return None
         except Exception as e:
-            logger.error("Failed to save event %s to Neo4j: %s: %s", unique_id, type(e).__name__, e)
+            logger.error("Failed to save event %s to Neo4j: %s: %s", reporting_id, type(e).__name__, e)
+            return None
 
     async def close(self):
         await self._driver.close()

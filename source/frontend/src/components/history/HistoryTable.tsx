@@ -3,6 +3,7 @@ import { SensorNavLink } from '../common/SensorNavLink'
 import { ZoneNavLink } from '../common/ZoneNavLink'
 import { classificationBadgeClass, classificationLabel } from '../../utils/classification'
 import { formatFrequency, formatUtcTimestamp } from '../../utils/format'
+import { useTimezone } from '../../contexts/TimezoneContext'
 import type { SeismicEvent } from '../../types/seismic'
 
 interface HistoryTableProps {
@@ -32,6 +33,7 @@ export const HistoryTable = ({
   onExportJson,
   onSelectEvent,
 }: HistoryTableProps) => {
+  const { timezone } = useTimezone()
   const pageStart = Math.min(total, offset + 1)
   const pageEnd = Math.min(total, offset + events.length)
   const canPrev = offset > 0
@@ -65,11 +67,12 @@ export const HistoryTable = ({
 
       <div className="overflow-x-auto rounded-sm border border-zinc-700/90">
         <div className="min-w-[50rem]">
-          <div className="grid grid-cols-[0.8fr_1.4fr_0.7fr_1.1fr_1fr] bg-zinc-900 px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+          <div className="grid grid-cols-[0.8fr_1.4fr_0.7fr_1.1fr_0.55fr_1fr] bg-zinc-900 px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
             <span>Sensor</span>
             <span>Timestamp</span>
-            <span>Frequency</span>
+            <span>Avg. Freq</span>
             <span>Classification</span>
+            <span className="text-center">Conf.</span>
             <span>Region</span>
           </div>
           <div className="max-h-[22rem] overflow-y-auto bg-zinc-950/70">
@@ -83,7 +86,7 @@ export const HistoryTable = ({
             events.map((event) => (
               <div
                 key={event.event_id}
-                className="grid grid-cols-[0.8fr_1.4fr_0.7fr_1.1fr_1fr] items-center border-b border-zinc-800/70 px-3 py-2 text-xs text-zinc-200 transition hover:bg-zinc-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                className="grid grid-cols-[0.8fr_1.4fr_0.7fr_1.1fr_0.55fr_1fr] items-center border-b border-zinc-800/70 px-3 py-2 text-xs text-zinc-200 transition hover:bg-zinc-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
                 role="button"
                 tabIndex={0}
                 onClick={() => onSelectEvent(event)}
@@ -97,7 +100,7 @@ export const HistoryTable = ({
                 <span className="font-medium text-zinc-100">
                   <SensorNavLink sensorId={event.sensor_id} className="px-0 py-0 text-zinc-100 hover:text-cyan-200" />
                 </span>
-                <span className="text-zinc-400">{formatUtcTimestamp(event.timestamp)}</span>
+                <span className="text-zinc-400">{formatUtcTimestamp(event.timestamp, timezone)}</span>
                 <span>{formatFrequency(event.frequency)}</span>
                 <span
                   className={clsx(
@@ -106,6 +109,13 @@ export const HistoryTable = ({
                   )}
                 >
                   {classificationLabel[event.classification]}
+                </span>
+                <span className="flex justify-center">
+                  {event.confirmed === true ? (
+                    <span className="inline-flex items-center gap-1 rounded-sm border border-emerald-500/40 bg-emerald-900/25 px-1.5 py-0.5 text-[10px] uppercase tracking-[0.08em] text-emerald-300">✓</span>
+                  ) : (
+                    <span className="text-zinc-600">—</span>
+                  )}
                 </span>
                 <span>
                   {event.sensor?.region ? (

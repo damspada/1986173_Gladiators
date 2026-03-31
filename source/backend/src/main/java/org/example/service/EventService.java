@@ -5,8 +5,8 @@ import org.example.dto.HistoryPageDto;
 import org.example.dto.IncidentClusterDto;
 import org.example.dto.SeismicEventDto;
 import org.example.model.Classification;
-import org.example.model.Event;
-import org.example.repository.EventRepository;
+import org.example.model.Reporting;
+import org.example.repository.ReportingRepository;
 import org.example.websocket.SeismicWebSocketHandler;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,14 +21,14 @@ import java.util.List;
 @Transactional
 public class EventService {
 
-    private final EventRepository eventRepository;
+    private final ReportingRepository reportingRepository;
     private final SeismicWebSocketHandler webSocketHandler;
     private final Neo4jClient neo4jClient;
 
-    public EventService(EventRepository eventRepository,
+    public EventService(ReportingRepository reportingRepository,
                         SeismicWebSocketHandler webSocketHandler,
                         Neo4jClient neo4jClient) {
-        this.eventRepository = eventRepository;
+        this.reportingRepository = reportingRepository;
         this.webSocketHandler = webSocketHandler;
         this.neo4jClient = neo4jClient;
     }
@@ -40,9 +39,9 @@ public class EventService {
     public List<SeismicEventDto> findByFilters(Classification type, String sensorId,
                                                String region, Instant from, Instant to) {
         String classification = type != null ? type.name() : null;
-        return eventRepository.findByFilters(classification, sensorId, region, from, to)
+        return reportingRepository.findByFilters(classification, sensorId, region, from, to)
                 .stream()
-                .map(SeismicEventDto::forHistory)
+                .map(SeismicEventDto::fromReporting)
                 .toList();
     }
 
@@ -51,41 +50,46 @@ public class EventService {
                                              String region, Instant from, Instant to,
                                              int offset, int limit) {
         String classification = type != null ? type.name() : null;
-        long total = eventRepository.countByFilters(classification, sensorId, region, from, to);
-        List<SeismicEventDto> events = eventRepository
+        long total = reportingRepository.countByFilters(classification, sensorId, region, from, to);
+        List<SeismicEventDto> events = reportingRepository
                 .findByFiltersPaged(classification, sensorId, region, from, to, offset, limit)
                 .stream()
-                .map(SeismicEventDto::forHistory)
+                .map(SeismicEventDto::fromReporting)
                 .toList();
         return new HistoryPageDto(events, total, limit, offset);
     }
 
     @Transactional(readOnly = true)
     public List<SeismicEventDto> findConfirmedEvents() {
-        return eventRepository.findAllConfirmed()
+        return reportingRepository.findAllConfirmed()
                 .stream()
-                .map(SeismicEventDto::forHistory)
+                .map(SeismicEventDto::fromReporting)
                 .toList();
     }
 
     /**
-     * Returns per-event corroboration data: how many replicas reported each event
-     * and which replica IDs they were. Uses Neo4jClient for the aggregation query
-     * since it returns multi-column results that don't map to a single entity.
+     * Returns per-reporting corroboration data: how many replicas contributed
+     * individual events, their frequencies and classifications.
      */
     @Transactional(readOnly = true)
     public List<CorroborationDto> findCorroboration() {
         String cypher = """
-                MATCH (e:SeismicEvent)
-                OPTIONAL MATCH (rep:Replica)-[:REPORTED]->(e)
-                WITH e, collect(rep.replicaId) AS replicaIds
-                RETURN e.eventId        AS eventId,
-                       e.classification AS classification,
-                       e.region         AS region,
-                       e.confirmed      AS confirmed,
-                       size(replicaIds) AS reporterCount,
-                       replicaIds
-                ORDER BY reporterCount DESC, e.timestamp DESC
+                MATCH (r:Reporting)
+                OPTIONAL MATCH (e:SeismicEvent)-[:PART_OF]->(r)
+                WITH r,
+                     collect(e.replicaId)      AS replicaIds,
+                     collect(e.frequency)      AS frequencies,
+                     collect(e.classification) AS classifications
+                RETURN r.reportingId       AS eventId,
+                       r.classification    AS classification,
+                       r.avgFrequency      AS avgFrequency,
+                       r.region            AS region,
+                       r.confirmed         AS confirmed,
+                       size(replicaIds)    AS reporterCount,
+                       replicaIds,
+                       frequencies,
+                       classifications
+                ORDER BY reporterCount DESC, r.timestamp DESC
                 """;
 
         return neo4jClient.query(cypher)
@@ -93,10 +97,13 @@ public class EventService {
                 .mappedBy((typeSystem, record) -> new CorroborationDto(
                         record.get("eventId").asString(null),
                         record.get("classification").asString(null),
+                        record.get("avgFrequency").asDouble(0.0),
                         record.get("region").asString(null),
                         record.get("confirmed").asBoolean(false),
                         record.get("reporterCount").asInt(0),
-                        record.get("replicaIds").asList(v -> v.asString())
+                        record.get("replicaIds").asList(v -> v.asString()),
+                        record.get("frequencies").asList(v -> v.asDouble()),
+                        record.get("classifications").asList(v -> v.asString())
                 ))
                 .all()
                 .stream()
@@ -104,34 +111,42 @@ public class EventService {
     }
 
     /**
-     * Returns corroboration data for a single event by its ID.
-     * Includes which replicas reported it, their detection timestamps, and confirmation status.
+     * Returns corroboration data for a single reporting by its ID.
+     * Shows individual event frequencies and classifications from each replica.
      */
     @Transactional(readOnly = true)
-    public CorroborationDto findCorroborationById(String eventId) {
+    public CorroborationDto findCorroborationById(String reportingId) {
         String cypher = """
-                MATCH (e:SeismicEvent {eventId: $eventId})
-                OPTIONAL MATCH (rep:Replica)-[r:REPORTED]->(e)
-                WITH e, collect({replicaId: rep.replicaId, detectedAt: r.detectedAt}) AS reporters
-                RETURN e.eventId        AS eventId,
-                       e.classification AS classification,
-                       e.region         AS region,
-                       e.confirmed      AS confirmed,
-                       size(reporters)  AS reporterCount,
-                       [x IN reporters | x.replicaId]  AS replicaIds,
-                       [x IN reporters | toString(x.detectedAt)] AS detectedAts
+                MATCH (r:Reporting {reportingId: $reportingId})
+                OPTIONAL MATCH (e:SeismicEvent)-[:PART_OF]->(r)
+                WITH r,
+                     collect({replicaId: e.replicaId, frequency: e.frequency,
+                              classification: e.classification, detectedAt: e.timestamp}) AS events
+                RETURN r.reportingId       AS eventId,
+                       r.classification    AS classification,
+                       r.avgFrequency      AS avgFrequency,
+                       r.region            AS region,
+                       r.confirmed         AS confirmed,
+                       size(events)        AS reporterCount,
+                       [x IN events | x.replicaId]       AS replicaIds,
+                       [x IN events | x.frequency]       AS frequencies,
+                       [x IN events | x.classification]  AS classifications,
+                       [x IN events | toString(x.detectedAt)] AS detectedAts
                 """;
 
         return neo4jClient.query(cypher)
-                .bindAll(java.util.Map.of("eventId", eventId))
+                .bindAll(java.util.Map.of("reportingId", reportingId))
                 .fetchAs(CorroborationDto.class)
                 .mappedBy((typeSystem, record) -> new CorroborationDto(
                         record.get("eventId").asString(null),
                         record.get("classification").asString(null),
+                        record.get("avgFrequency").asDouble(0.0),
                         record.get("region").asString(null),
                         record.get("confirmed").asBoolean(false),
                         record.get("reporterCount").asInt(0),
                         record.get("replicaIds").asList(v -> v.asString()),
+                        record.get("frequencies").asList(v -> v.asDouble()),
+                        record.get("classifications").asList(v -> v.asString()),
                         record.get("detectedAts").asList(v -> v.asString())
                 ))
                 .one()
@@ -139,21 +154,18 @@ public class EventService {
     }
 
     /**
-     * Groups events into incident clusters: events in the same region within
+     * Groups reportings into incident clusters: reportings in the same region within
      * {@code windowMinutes} of each other belong to the same cluster.
-     * Performed via a single Cypher query that returns events ordered by region
-     * and timestamp, then clustered in Java.
      */
     @Transactional(readOnly = true)
     public List<IncidentClusterDto> findIncidentClusters(int windowMinutes,
                                                           Instant from, Instant to) {
         String classification = null;
-        List<Event> events = (from != null || to != null)
-                ? eventRepository.findByFilters(classification, null, null, from, to)
-                : eventRepository.findByFilters(classification, null, null, null, null);
+        List<Reporting> reportings = (from != null || to != null)
+                ? reportingRepository.findByFilters(classification, null, null, from, to)
+                : reportingRepository.findByFilters(classification, null, null, null, null);
 
-        // Sort by region, then by timestamp
-        events.sort((a, b) -> {
+        reportings.sort((a, b) -> {
             int regionCmp = safeRegion(a).compareTo(safeRegion(b));
             if (regionCmp != 0) return regionCmp;
             return a.getTimestamp().compareTo(b.getTimestamp());
@@ -161,29 +173,29 @@ public class EventService {
 
         Duration window = Duration.ofMinutes(windowMinutes);
         List<IncidentClusterDto> clusters = new ArrayList<>();
-        List<Event> currentGroup = new ArrayList<>();
+        List<Reporting> currentGroup = new ArrayList<>();
         String currentRegion = null;
 
-        for (Event event : events) {
-            String region = safeRegion(event);
+        for (Reporting r : reportings) {
+            String region = safeRegion(r);
             if (currentRegion == null) {
                 currentRegion = region;
-                currentGroup.add(event);
+                currentGroup.add(r);
                 continue;
             }
 
-            Event last = currentGroup.get(currentGroup.size() - 1);
+            Reporting last = currentGroup.get(currentGroup.size() - 1);
             boolean sameRegion = region.equals(currentRegion);
             boolean withinWindow = sameRegion &&
-                    Duration.between(last.getTimestamp(), event.getTimestamp()).abs()
+                    Duration.between(last.getTimestamp(), r.getTimestamp()).abs()
                             .compareTo(window) <= 0;
 
             if (sameRegion && withinWindow) {
-                currentGroup.add(event);
+                currentGroup.add(r);
             } else {
                 clusters.add(buildCluster(currentGroup, currentRegion));
                 currentGroup = new ArrayList<>();
-                currentGroup.add(event);
+                currentGroup.add(r);
                 currentRegion = region;
             }
         }
@@ -192,36 +204,37 @@ public class EventService {
             clusters.add(buildCluster(currentGroup, currentRegion));
         }
 
-        // Sort clusters newest-first
         clusters.sort((a, b) -> b.toTimestamp().compareTo(a.toTimestamp()));
         return clusters;
     }
 
-    private static String safeRegion(Event e) {
-        return e.getRegion() != null ? e.getRegion() : "UNKNOWN";
+    private static String safeRegion(Reporting r) {
+        return r.getRegion() != null ? r.getRegion() : "UNKNOWN";
     }
 
-    private static IncidentClusterDto buildCluster(List<Event> group, String region) {
-        Event first = group.get(0);
-        Event last = group.get(group.size() - 1);
+    private static IncidentClusterDto buildCluster(List<Reporting> group, String region) {
+        Reporting first = group.get(0);
+        Reporting last = group.get(group.size() - 1);
 
-        // Severity = highest classification in the group
         Classification severity = group.stream()
-                .map(Event::getClassification)
+                .map(r -> {
+                    try { return Classification.valueOf(r.getClassification()); }
+                    catch (Exception e) { return Classification.EARTHQUAKE; }
+                })
                 .max((a, b) -> Integer.compare(a.ordinal(), b.ordinal()))
                 .orElse(Classification.EARTHQUAKE);
 
         double peakFreq = group.stream()
-                .mapToDouble(Event::getFrequency)
+                .mapToDouble(Reporting::getAvgFrequency)
                 .max()
                 .orElse(0.0);
 
-        int confirmedCount = (int) group.stream().filter(Event::isConfirmed).count();
+        int confirmedCount = (int) group.stream().filter(Reporting::isConfirmed).count();
 
         String id = region + "-" + first.getTimestamp().toInstant().toString();
 
         List<SeismicEventDto> eventDtos = group.stream()
-                .map(SeismicEventDto::forHistory)
+                .map(SeismicEventDto::fromReporting)
                 .toList();
 
         String fromTs = first.getTimestamp().toInstant().toString();
@@ -240,18 +253,10 @@ public class EventService {
         );
     }
 
-    // ── Write ────────────────────────────────────────────────────────────────
+    // ── Broadcast ────────────────────────────────────────────────────────────
 
-    public Event save(Event event) {
-        // eventId is deterministic (MD5 by replicas) — skip Neo4j write if already persisted,
-        // but always broadcast so the first replica's notification reaches the WebSocket clients.
-        if (event.getEventId() != null && eventRepository.existsById(event.getEventId())) {
-            webSocketHandler.broadcast(SeismicEventDto.forRealtime(event));
-            return event;
-        }
-        Event saved = eventRepository.save(event);
-        webSocketHandler.broadcast(SeismicEventDto.forRealtime(saved));
-        return saved;
+    public void broadcast(SeismicEventDto dto) {
+        webSocketHandler.broadcast(dto);
     }
 }
 

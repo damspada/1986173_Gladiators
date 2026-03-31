@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTimezone, TIMEZONE_OPTIONS } from '../../contexts/TimezoneContext'
 
 type ThemeMode = 'dark' | 'light'
 type ThemePattern = 'classic' | 'amber' | 'emerald'
@@ -20,6 +21,7 @@ export const ThemeMenu = ({
 }: ThemeMenuProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const { timezone, setTimezone } = useTimezone()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,8 +52,25 @@ export const ThemeMenu = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 z-[2200] rounded-sm border border-zinc-700 bg-zinc-900 p-2 text-[10px] shadow-lg min-w-[140px]">
+        <div className="absolute right-0 top-full mt-1 z-[2200] rounded-sm border border-zinc-700 bg-zinc-900 p-2 text-[10px] shadow-lg min-w-[160px]">
           <div className="space-y-2">
+            {/* Timezone Select */}
+            <div>
+              <label htmlFor="theme-timezone" className="block text-[9px] uppercase tracking-[0.1em] text-zinc-400 mb-1">
+                Timezone
+              </label>
+              <select
+                id="theme-timezone"
+                value={timezone}
+                className="w-full rounded-sm border border-zinc-700 bg-zinc-800 px-2 py-1 text-[10px] tracking-[0.08em] text-zinc-200 transition hover:border-cyan-400/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
+                onChange={(e) => setTimezone(e.target.value)}
+              >
+                {TIMEZONE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Pattern Select */}
             <div>
               <label htmlFor="theme-pattern" className="block text-[9px] uppercase tracking-[0.1em] text-zinc-400 mb-1">

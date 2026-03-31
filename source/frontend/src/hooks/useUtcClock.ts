@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
+import { useTimezone } from '../contexts/TimezoneContext'
+import { formatUtcTimestamp } from '../utils/format'
 
 export const useUtcClock = (): string => {
-  const [utcNow, setUtcNow] = useState(() => new Date().toISOString().replace('T', ' ').replace('Z', ' UTC'))
+  const { timezone } = useTimezone()
+  const [now, setNow] = useState(() => formatUtcTimestamp(new Date().toISOString(), timezone))
 
   useEffect(() => {
+    setNow(formatUtcTimestamp(new Date().toISOString(), timezone))
     const id = window.setInterval(() => {
-      setUtcNow(new Date().toISOString().replace('T', ' ').replace('Z', ' UTC'))
+      setNow(formatUtcTimestamp(new Date().toISOString(), timezone))
     }, 1000)
-
     return () => window.clearInterval(id)
-  }, [])
+  }, [timezone])
 
-  return utcNow
+  return now
 }

@@ -12,6 +12,7 @@ import {
   isSevereAnomaly,
 } from '../utils/classification'
 import { formatFrequency, formatUtcTimestamp } from '../utils/format'
+import { useTimezone } from '../contexts/TimezoneContext'
 import { fetchHistoryEvents } from '../services/historyApi'
 import type { SeismicEvent, SensorMeta } from '../types/seismic'
 
@@ -130,6 +131,7 @@ const createSensorSnapshot = (events: SeismicEvent[]): SensorSnapshot => {
 }
 
 export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: SensorDetailsPageProps) => {
+  const { timezone } = useTimezone()
   const { sensorId: rawSensorId } = useParams()
   const sensorId = useMemo(() => decodeURIComponent(rawSensorId ?? '').trim(), [rawSensorId])
   const [historyEvents, setHistoryEvents] = useState<SeismicEvent[]>([])
@@ -650,7 +652,7 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
 
           {visibleWindowMs ? (
             <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-400">
-              Window: {formatUtcTimestamp(new Date(visibleWindowMs.startMs).toISOString())} - {formatUtcTimestamp(new Date(visibleWindowMs.endMs).toISOString())}
+              Window: {formatUtcTimestamp(new Date(visibleWindowMs.startMs).toISOString(), timezone)} - {formatUtcTimestamp(new Date(visibleWindowMs.endMs).toISOString(), timezone)}
             </p>
           ) : null}
 
@@ -763,7 +765,7 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
 
               {hoveredPoint ? (
                 <div className="mt-2 rounded-sm border border-cyan-700/60 bg-cyan-950/15 p-2 text-[10px] uppercase tracking-[0.14em] text-cyan-100">
-                  Inspecting: {formatUtcTimestamp(hoveredPoint.point.event.startsAt ?? hoveredPoint.point.event.timestamp)} | {formatFrequency(hoveredPoint.point.event.frequency)} | {classificationLabel[hoveredPoint.point.event.classification]}
+                  Inspecting: {formatUtcTimestamp(hoveredPoint.point.event.startsAt ?? hoveredPoint.point.event.timestamp, timezone)} | {formatFrequency(hoveredPoint.point.event.frequency)} | {classificationLabel[hoveredPoint.point.event.classification]}
                 </div>
               ) : (
                 <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">Hover points to inspect timestamp, frequency and classification.</p>
@@ -849,7 +851,7 @@ export const SensorDetailsPage = ({ sensors, liveEvents, onSelectEvent }: Sensor
                   className="grid w-full grid-cols-[1.6fr_0.8fr_1.2fr] items-center border-b border-zinc-800/70 px-3 py-2 text-left text-xs text-zinc-200 transition hover:bg-zinc-900/40"
                   onClick={() => onSelectEvent(event)}
                 >
-                  <span className="text-zinc-300">{formatUtcTimestamp(event.startsAt ?? event.timestamp)}</span>
+                  <span className="text-zinc-300">{formatUtcTimestamp(event.startsAt ?? event.timestamp, timezone)}</span>
                   <span>{formatFrequency(event.frequency)}</span>
                   <span
                     className={clsx(
