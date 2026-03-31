@@ -116,7 +116,7 @@ export const AlertSettingsMenu = ({
       </button>
 
         {isOpen ? (
-          <div className="absolute right-0 top-full z-50 mt-1 w-[min(92vw,28rem)] rounded-sm border border-zinc-700 bg-zinc-900 p-3 text-[10px] shadow-xl">
+          <div className="absolute right-0 top-full z-[2200] mt-1 w-[min(92vw,28rem)] rounded-sm border border-zinc-700 bg-zinc-900 p-3 text-[10px] shadow-xl">
             <div className="mb-2 flex items-center justify-between border-b border-zinc-700/80 pb-2 text-[10px] uppercase tracking-[0.12em] text-zinc-300">
             <span>Alert Settings</span>
             <span className="text-zinc-400">

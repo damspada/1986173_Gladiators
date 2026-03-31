@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom'
+
 interface AboutModalProps {
   open: boolean
   onClose: () => void
@@ -28,15 +30,12 @@ export const AboutModal = ({
     }).format(parsed)
   }
 
-  const liveWsStatus = liveWsUrl && liveWsUrl.length > 0 ? 'Configured' : 'Not configured'
-  const historyApiStatus = historyApiUrl && historyApiUrl.length > 0 ? 'Configured' : 'Not configured'
-
   if (!open) {
     return null
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3" role="dialog" aria-modal="true">
+  return createPortal(
+    <div className="fixed inset-0 flex items-center justify-center bg-black/70 px-3" style={{ zIndex: 9999 }} role="dialog" aria-modal="true">
       <div className="tactical-panel w-[min(92vw,36rem)] border-zinc-700/90 p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -54,15 +53,16 @@ export const AboutModal = ({
 
         <div className="mt-4 space-y-2 text-[11px] uppercase tracking-[0.1em] text-zinc-300">
           <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Frontend version: {frontendVersion}</p>
-          <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Build timestamp: {buildTimestamp}</p>
+          <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Build date (UTC): {formatBuildDate(buildTimestamp)}</p>
           <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">
-            Live websocket: {liveWsUrl && liveWsUrl.length > 0 ? 'configured' : 'not configured'}
+            Backend image: {backendImageTag || 'Unavailable'}
           </p>
           <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">
-            History API: {historyApiUrl && historyApiUrl.length > 0 ? 'configured' : 'not configured'}
+            Commit: {commitHash || 'Unavailable'}
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

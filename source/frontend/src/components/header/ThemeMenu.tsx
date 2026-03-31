@@ -50,7 +50,7 @@ export const ThemeMenu = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 z-50 rounded-sm border border-zinc-700 bg-zinc-900 p-2 text-[10px] shadow-lg min-w-[140px]">
+        <div className="absolute right-0 top-full mt-1 z-[2200] rounded-sm border border-zinc-700 bg-zinc-900 p-2 text-[10px] shadow-lg min-w-[140px]">
           <div className="space-y-2">
             {/* Pattern Select */}
             <div>

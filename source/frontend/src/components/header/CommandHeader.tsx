@@ -38,7 +38,7 @@ export const CommandHeader = ({
   const utcClock = useUtcClock()
 
   return (
-    <header className="tactical-panel border-zinc-700/80 px-4 py-4 md:px-6">
+    <header className="tactical-panel relative z-[2100] border-zinc-700/80 px-4 py-4 md:px-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <Link to="/live" className="hover:opacity-80 transition-opacity">
           <p className="text-[10px] uppercase tracking-[0.24em] text-cyan-300/90 sm:text-[11px] sm:tracking-[0.42em]">Strategic Theater // Year 2038</p>

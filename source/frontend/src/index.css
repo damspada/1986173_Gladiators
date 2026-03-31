@@ -489,6 +489,16 @@ body {
 
 .sensor-world-map {
   background: var(--map-shell-bg);
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+
+.sensor-world-map .leaflet-pane,
+.sensor-world-map .leaflet-top,
+.sensor-world-map .leaflet-bottom,
+.sensor-world-map .leaflet-control {
+  z-index: 1;
 }
 
 .sensor-world-map .leaflet-control-zoom a {

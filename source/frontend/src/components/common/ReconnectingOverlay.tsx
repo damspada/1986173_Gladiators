@@ -30,7 +30,7 @@ export const ReconnectingOverlay = ({
   }
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px]">
+    <div className="pointer-events-none fixed inset-0 z-[2300] flex items-center justify-center bg-black/70 backdrop-blur-[2px]">
       <div className="pointer-events-auto tactical-panel w-[min(92vw,32rem)] border-rose-500/40 text-center">
         <p className="text-xs uppercase tracking-[0.36em] text-rose-300">Signal Link Interrupted</p>
         <h2 className="mt-3 text-2xl font-semibold text-zinc-100">Reconnecting...</h2>
