@@ -3,6 +3,7 @@ import type {
   HistoryPageResult,
   HistoryQuery,
   HistoryQueryOptions,
+  ReplicaDisconnectionPage,
   SeismicEvent,
 } from '../types/seismic'
 import type { IncidentCluster } from '../utils/incidents'
@@ -166,4 +167,22 @@ export const fetchEventCorroboration = async (eventId: string): Promise<EventCor
   if (response.status === 404) return null
   if (!response.ok) throw new Error(`Corroboration request failed with status ${response.status}.`)
   return (await response.json()) as EventCorroboration
+}
+
+export const fetchReplicaDisconnections = async (
+  page: number = 0,
+  size: number = 20,
+  replicaId?: string,
+): Promise<ReplicaDisconnectionPage> => {
+  if (!HISTORY_ENDPOINT) throw new Error('History endpoint is not configured.')
+
+  const parsed = new URL(HISTORY_ENDPOINT)
+  parsed.pathname = '/api/infrastructure/disconnections'
+  parsed.search = ''
+  const params = new URLSearchParams({ page: String(page), size: String(size) })
+  if (replicaId) params.set('replicaId', replicaId)
+
+  const response = await fetch(`${parsed.toString()}?${params.toString()}`)
+  if (!response.ok) throw new Error(`Disconnections request failed with status ${response.status}.`)
+  return (await response.json()) as ReplicaDisconnectionPage
 }

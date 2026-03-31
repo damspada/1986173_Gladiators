@@ -100,6 +100,20 @@ export interface DisconnectEvent {
   faultType: FaultType
 }
 
+export interface ReplicaDisconnectionEvent {
+  id: string
+  replica_id: string
+  timestamp: string
+  duration_seconds: number
+}
+
+export interface ReplicaDisconnectionPage {
+  events: ReplicaDisconnectionEvent[]
+  total: number
+  page: number
+  size: number
+}
+
 export interface MissionMetrics {
   sessionStartedAt: string
   uptimeMs: number

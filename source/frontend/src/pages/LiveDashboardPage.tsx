@@ -8,14 +8,6 @@ import type { InfrastructureStatus, MissionMetrics, SeismicEvent, SensorMeta } f
 import { SensorGridMap } from '../components/live/SensorGridMap'
 import { LiveEventFeed } from '../components/live/LiveEventFeed'
 
-const formatDuration = (ms: number): string => {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000))
-  const hh = String(Math.floor(totalSeconds / 3600)).padStart(2, '0')
-  const mm = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0')
-  const ss = String(totalSeconds % 60).padStart(2, '0')
-  return `${hh}:${mm}:${ss}`
-}
-
 interface LiveDashboardPageProps {
   sensors: SensorMeta[]
   events: SeismicEvent[]
@@ -62,31 +54,6 @@ export const LiveDashboardPage = ({
 
   return (
     <section className="space-y-4">
-      <section className="tactical-panel p-3 sm:p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-          <span>Live Operations Overview</span>
-          <span>{events.length} buffered events</span>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Session uptime</p>
-            <p className="mt-1 text-sm uppercase tracking-[0.1em] text-cyan-200">{formatDuration(missionMetrics.uptimeMs)}</p>
-          </div>
-          <div className="rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Total reconnects</p>
-            <p className="mt-1 text-sm uppercase tracking-[0.1em] text-amber-200">{missionMetrics.reconnectCount}</p>
-          </div>
-          <div className="rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Max disconnect</p>
-            <p className="mt-1 text-sm uppercase tracking-[0.1em] text-rose-200">{formatDuration(missionMetrics.maxDisconnectMs)}</p>
-          </div>
-          <div className="rounded-sm border border-zinc-700/80 bg-zinc-900/60 px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">Estimated lost events</p>
-            <p className="mt-1 text-sm uppercase tracking-[0.1em] text-zinc-100">{missionMetrics.estimatedLostEvents}</p>
-          </div>
-        </div>
-      </section>
-
       {infrastructureHealthLabel !== 'Nominal' && (
         <section className="rounded-sm border border-rose-500/70 bg-rose-900/20 px-4 py-3">
           <div className="flex items-center gap-2">

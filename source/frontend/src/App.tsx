@@ -164,17 +164,6 @@ const AppFrame = () => {
         checks.push('Backend health endpoint: unreachable (run docker compose up)')
       }
 
-      try {
-        const streamUrl = new URL(LIVE_HISTORY_URL)
-        streamUrl.pathname = '/api/mock/stream'
-        streamUrl.search = ''
-
-        const simulatorResponse = await fetch(streamUrl.toString())
-        checks.push(simulatorResponse.ok ? 'Simulator control endpoint: OK' : 'Simulator control endpoint: unavailable')
-      } catch {
-        checks.push('Simulator control endpoint: unreachable')
-      }
-
       if (active) {
         setDiagnostics(checks)
       }

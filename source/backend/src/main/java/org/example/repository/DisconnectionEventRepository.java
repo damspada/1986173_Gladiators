@@ -19,4 +19,22 @@ public interface DisconnectionEventRepository extends Neo4jRepository<Disconnect
     @Query("MATCH (r:Replica)-[:HAD_DISCONNECTION]->(d:DisconnectionEvent) " +
            "RETURN d ORDER BY d.timestamp DESC")
     List<DisconnectionEvent> findAllOrderByTimestampDesc();
+
+    /** Paginated: all replicas, newest first. */
+    @Query("MATCH (r:Replica)-[:HAD_DISCONNECTION]->(d:DisconnectionEvent) " +
+           "RETURN d ORDER BY d.timestamp DESC SKIP $skip LIMIT $limit")
+    List<DisconnectionEvent> findAllPaginated(int skip, int limit);
+
+    /** Paginated: single replica, newest first. */
+    @Query("MATCH (r:Replica {replicaId: $replicaId})-[:HAD_DISCONNECTION]->(d:DisconnectionEvent) " +
+           "RETURN d ORDER BY d.timestamp DESC SKIP $skip LIMIT $limit")
+    List<DisconnectionEvent> findByReplicaIdPaginated(String replicaId, int skip, int limit);
+
+    /** Total count across all replicas. */
+    @Query("MATCH (r:Replica)-[:HAD_DISCONNECTION]->(d:DisconnectionEvent) RETURN count(d)")
+    long countAll();
+
+    /** Total count for a specific replica. */
+    @Query("MATCH (r:Replica {replicaId: $replicaId})-[:HAD_DISCONNECTION]->(d:DisconnectionEvent) RETURN count(d)")
+    long countByReplicaId(String replicaId);
 }

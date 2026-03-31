@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { DisconnectEvent, InfrastructureStatus } from '../types/seismic'
+import type { DisconnectEvent, InfrastructureStatus, ReplicaDisconnectionEvent } from '../types/seismic'
+import { fetchReplicaDisconnections } from '../services/historyApi'
+import { formatUtcTimestamp } from '../utils/format'
 
 const resolveInfrastructureWsUrl = (historyApiUrl?: string): string => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -31,6 +33,33 @@ export const InfrastructurePage = ({ historyApiUrl, disconnectHistory = [] }: In
   const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
+
+  // Disconnections table state
+  const [discEvents, setDiscEvents] = useState<ReplicaDisconnectionEvent[]>([])
+  const [discTotal, setDiscTotal] = useState(0)
+  const [discPage, setDiscPage] = useState(0)
+  const [discSize] = useState(10)
+  const [discReplicaFilter, setDiscReplicaFilter] = useState('')
+  const [discLoading, setDiscLoading] = useState(false)
+  const [discError, setDiscError] = useState<string | null>(null)
+
+  const loadDisconnections = useCallback(async (page: number, replicaId: string) => {
+    setDiscLoading(true)
+    setDiscError(null)
+    try {
+      const result = await fetchReplicaDisconnections(page, discSize, replicaId || undefined)
+      setDiscEvents(result.events)
+      setDiscTotal(result.total)
+    } catch (err: unknown) {
+      setDiscError(err instanceof Error ? err.message : 'Failed to load disconnections.')
+    } finally {
+      setDiscLoading(false)
+    }
+  }, [discSize])
+
+  useEffect(() => {
+    void loadDisconnections(discPage, discReplicaFilter)
+  }, [loadDisconnections, discPage, discReplicaFilter])
 
   useEffect(() => {
     const trimmed = historyApiUrl?.trim()
@@ -244,6 +273,108 @@ export const InfrastructurePage = ({ historyApiUrl, disconnectHistory = [] }: In
           )}
         </div>
       ) : null}
+
+      {/* Replica Disconnection Events Table */}
+      <section className="tactical-panel p-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[13px] uppercase tracking-[0.2em] text-cyan-200">Replica Disconnection Events</h2>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Filter by replica ID"
+              value={discReplicaFilter}
+              onChange={(e) => {
+                setDiscPage(0)
+                setDiscReplicaFilter(e.target.value)
+              }}
+              className="rounded-sm border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300 placeholder-zinc-600 outline-none focus:border-cyan-500/60 w-48"
+            />
+            <button
+              type="button"
+              onClick={() => void loadDisconnections(discPage, discReplicaFilter)}
+              disabled={discLoading}
+              className="rounded-sm border border-cyan-500/70 bg-cyan-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-300 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:border-zinc-700 disabled:text-zinc-500"
+            >
+              {discLoading ? 'Loading…' : 'Refresh'}
+            </button>
+          </div>
+        </div>
+
+        {discError && (
+          <p className="mb-3 text-[11px] text-rose-400">{discError}</p>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="border-b border-zinc-700/60 text-left text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                <th className="pb-2 pr-4 font-normal">Replica</th>
+                <th className="pb-2 pr-4 font-normal">Disconnected At (UTC)</th>
+                <th className="pb-2 pr-4 font-normal">Session Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              {discEvents.length === 0 && !discLoading ? (
+                <tr>
+                  <td colSpan={3} className="py-4 text-center text-zinc-500 uppercase tracking-[0.12em]">
+                    No disconnection events recorded.
+                  </td>
+                </tr>
+              ) : (
+                discEvents.map((ev) => {
+                  const durationLabel = ev.duration_seconds < 0
+                    ? 'unknown'
+                    : ev.duration_seconds < 60
+                      ? `${ev.duration_seconds}s`
+                      : ev.duration_seconds < 3600
+                        ? `${Math.floor(ev.duration_seconds / 60)}m ${ev.duration_seconds % 60}s`
+                        : `${Math.floor(ev.duration_seconds / 3600)}h ${Math.floor((ev.duration_seconds % 3600) / 60)}m`
+
+                  return (
+                    <tr
+                      key={ev.id}
+                      className="border-b border-zinc-800/60 text-zinc-300 transition hover:bg-zinc-800/30"
+                    >
+                      <td className="py-2 pr-4 font-mono text-cyan-300/80">{ev.replica_id}</td>
+                      <td className="py-2 pr-4 font-mono text-zinc-400">{ev.timestamp ? formatUtcTimestamp(ev.timestamp) : '—'}</td>
+                      <td className="py-2 pr-4">
+                        <span className={ev.duration_seconds < 0 ? 'text-zinc-500' : ev.duration_seconds > 300 ? 'text-rose-300' : 'text-amber-300'}>
+                          {durationLabel}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {discTotal > discSize && (
+          <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-[0.12em] text-zinc-400">
+            <span>{discTotal} total event{discTotal !== 1 ? 's' : ''} · page {discPage + 1} of {Math.ceil(discTotal / discSize)}</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDiscPage((p) => Math.max(0, p - 1))}
+                disabled={discPage === 0 || discLoading}
+                className="rounded-sm border border-zinc-700 px-2 py-0.5 hover:border-cyan-500/60 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                ← Prev
+              </button>
+              <button
+                type="button"
+                onClick={() => setDiscPage((p) => p + 1)}
+                disabled={(discPage + 1) * discSize >= discTotal || discLoading}
+                className="rounded-sm border border-zinc-700 px-2 py-0.5 hover:border-cyan-500/60 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
     </section>
   )
 }
