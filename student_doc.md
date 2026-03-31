@@ -5,29 +5,54 @@
 # USER STORIES:
 
 1. As an Operator, I want to see a real-time map of all sensors with their latest readings so I can quickly identify which regions are showing activity.
+
 2. As an Operator, I want to see a chronological feed of incoming seismic events with classification badges so I can stay aware of ongoing detections.
+
 3. As an Operator, I want to see how many replicas are healthy/degraded/unavailable so I can assess system reliability at a glance.
-4. As an Operator, I want to see session uptime, reconnect count, and estimated lost events so I can track system stability over time.
+
+4. As an Operator, I want to change the theme’s page and choose between Night or
+Light mode.
+
 5. As an Operator, I want to click on a sensor to see its recent events and status so I can investigate specific locations.
+
 6. As an Operator, I want to pause the live event feed to analyze a particular event cluster without new events scrolling past.
+
 7. As an Operator, I want to set custom frequency thresholds that trigger visual/audio alerts so I can focus on high-priority detections.
+
 8. As an Operator, I want events color-coded by severity (NUCLEAR in red, EXPLOSION in orange, EARTHQUAKE in yellow) so incident criticality is instantly visible.
-9. As a Data Analyst, I want to filter history by event type (EARTHQUAKE/EXPLOSION/NUCLEAR) so I can analyze specific seismic phenomena.
-10. As a Data Analyst, I want to narrow results by sensor ID or geographic region so I can study localized activity patterns.
-11. As a Data Analyst, I want to select custom date/time ranges and use preset shortcuts (Last Hour, Today, Last Week) so I can quickly review specific time windows.
-12. As a Data Analyst, I want to download filtered results as CSV so I can perform advanced statistical analysis in external tools.
-13. As a Data Analyst, I want to see events plotted on a timeline so I can identify temporal clustering and event sequences.
-14. As a Data Analyst, I want to group closely-timed events into "incidents" so I can analyze coordinated or cascading seismic activity.
-15. As a Data Analyst, I want to see which events were confirmed by majority vote across replicas so I can assess detection consensus quality.
-16. As a Data Analyst, I want to see frequency distribution charts (e.g., how many EARTHQUAKEs per region) so I can identify spatial-temporal patterns.
-17. As a Data Analyst, I want to compare event counts and frequency profiles across two sensors side-by-side so I can identify sensor anomalies or regional differences.
-18. As a System Administrator, I want to see which replicas are healthy and which are down so I can quickly identify infrastructure failures.
-19. As a System Administrator, I want to track total session uptime so I can report SLA compliance.
-20. As a System Administrator, I want to see how many reconnect events have occurred so I can detect flaky connections.
-21. As a System Administrator, I want to know approximate lost events count so I can assess data integrity.
+
+9. As an Operator, i want to pause the Map’s auto-movement when events incomes.
+
+10. As a Data Analyst, I want to filter history by event type (EARTHQUAKE/EXPLOSION/NUCLEAR) so I can analyze specific seismic phenomena.
+
+11. As a Data Analyst, I want to narrow results by sensor ID or geographic region so I can study localized activity patterns.
+
+12. As a Data Analyst, I want to select custom date/time ranges and use preset shortcuts (Last Hour, Today, Last Week) so I can quickly review specific time windows.
+
+13. As a Data Analyst, I want to download filtered results as CSV/JSON so I can perform advanced statistical analysis in external tools.
+
+14. As a Data Analyst, I want to see events plotted on a timeline so I can identify temporal clustering and event sequences.
+
+15. As a Data Analyst, I want to group closely-timed events into "incidents" so I can analyze coordinated or cascading seismic activity.
+
+16. As a Data Analyst, I want to see which events were confirmed by majority vote across replicas so I can assess detection consensus quality.
+
+17. As a Data Analyst, I want to see the events timeline given a specific region so I can identify spatial-temporal patterns.
+
+18. As a Data Analyst, I want to compare event counts and frequency profiles across two sensors side-by-side so I can identify sensor anomalies or regional differences.
+
+19. As a System Administrator, I want to see which replicas are healthy and which are down so I can quickly identify infrastructure failures.
+
+20. As a System Administrator, I want to download system metrics (uptime, reconnects, CPU/memory if available) so I can feed them into monitoring dashboards.
+
+21. As a System Administrator, I want to see how many reconnect events have occurred so I can detect flaky connections.
+
 22. As a System Administrator, I want to verify backend connectivity status so I can validate deployment health during startup.
+
 23. As a System Administrator, I want to receive visual alerts when a replica goes down or enters degraded state so I can respond quickly to failures.
-24. As a System Administrator, I want to download system metrics (uptime, reconnects, CPU/memory if available) so I can feed them into monitoring dashboards.
+
+24. As a System Administrator, I want to see the application’s version and many other informations.
+
 25. As a System Administrator,  I want the health status to be continuously updated via WebSocket so I can monitor fixes in real time.
 
 # CONTAINERS:
@@ -42,7 +67,6 @@ Manages sensor ingestion and internal event bus. It receives sensor telemetry, v
 2. As an Operator, I want to see a chronological feed of incoming seismic events with classification badges so I can stay aware of ongoing detections.
 5. As an Operator, I want to click on a sensor to see its recent events and status so I can investigate specific locations.
 7. As an Operator, I want to set custom frequency thresholds that trigger visual/audio alerts so I can focus on high-priority detections.
-9. As a Data Analyst, I want to filter history by event type (EARTHQUAKE/EXPLOSION/NUCLEAR) so I can analyze specific seismic phenomena.
 25. As a System Administrator,  I want the health status to be continuously updated via WebSocket so I can monitor fixes in real time.
 
 ### PORTS: 
@@ -71,8 +95,8 @@ The service uses goroutines for concurrent sensor reading and event broadcasting
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | GET | /stream | SSE endpoint for replicas to receive events | 1, 2, 5, 7, 9 |
-    | GET | /backend/ws | WebSocket for backend to receive replica status | 3, 4, 18-23 |
+    | GET | /stream | SSE endpoint for replicas to receive events | 1, 2, 5, 7 |
+    | GET | /backend/ws | WebSocket for backend to receive replica status | 3, 19-23, 25 |
 
 ## CONTAINER_NAME: Processing-Replica
 
@@ -81,15 +105,13 @@ Processes events to classify type, apply rules and produce consensus output. It 
 
 ### USER STORIES:
 3. As an Operator, I want to see how many replicas are healthy/degraded/unavailable so I can assess system reliability at a glance.
-4. As an Operator, I want to see session uptime, reconnect count, and estimated lost events so I can track system stability over time.
 6. As an Operator, I want to pause the live event feed to analyze a particular event cluster without new events scrolling past.
-14. As a Data Analyst, I want to group closely-timed events into "incidents" so I can analyze coordinated or cascading seismic activity.
-15. As a Data Analyst, I want to see which events were confirmed by majority vote across replicas so I can assess detection consensus quality.
-17. As a Data Analyst, I want to compare event counts and frequency profiles across two sensors side-by-side so I can identify sensor anomalies or regional differences.
-18. As a System Administrator, I want to see which replicas are healthy and which are down so I can quickly identify infrastructure failures.
-19. As a System Administrator, I want to track total session uptime so I can report SLA compliance.
-20. As a System Administrator, I want to see how many reconnect events have occurred so I can detect flaky connections.
-21. As a System Administrator, I want to know approximate lost events count so I can assess data integrity.
+15. As a Data Analyst, I want to group closely-timed events into "incidents" so I can analyze coordinated or cascading seismic activity.
+16. As a Data Analyst, I want to see which events were confirmed by majority vote across replicas so I can assess detection consensus quality.
+18. As a Data Analyst, I want to compare event counts and frequency profiles across two sensors side-by-side so I can identify sensor anomalies or regional differences.
+19. As a System Administrator, I want to see which replicas are healthy and which are down so I can quickly identify infrastructure failures.
+20. As a System Administrator, I want to download system metrics (uptime, reconnects, CPU/memory if available) so I can feed them into monitoring dashboards.
+21. As a System Administrator, I want to see how many reconnect events have occurred so I can detect flaky connections.
 22. As a System Administrator, I want to verify backend connectivity status so I can validate deployment health during startup.
 23. As a System Administrator, I want to receive visual alerts when a replica goes down or enters degraded state so I can respond quickly to failures.
 25. As a System Administrator,  I want the health status to be continuously updated via WebSocket so I can monitor fixes in real time.
@@ -120,8 +142,8 @@ The service uses FastAPI for REST endpoints, async processing for event handling
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | POST | /process | Process incoming event and return classification | 3, 4, 6, 14, 15, 17 |
-    | GET | /health | Report replica health status | 18-23 |
+    | POST | /process | Process incoming event and return classification | 3, 6, 15, 16, 18 |
+    | GET | /health | Report replica health status | 19-23 |
 
 - DB STRUCTURE: 
 
@@ -135,11 +157,13 @@ Provides aggregated endpoints for dashboard and analytics clients. Serves sensor
 
 ### USER STORIES:
 8. As an Operator, I want events color-coded by severity (NUCLEAR in red, EXPLOSION in orange, EARTHQUAKE in yellow) so incident criticality is instantly visible.
-10. As a Data Analyst, I want to narrow results by sensor ID or geographic region so I can study localized activity patterns.
-11. As a Data Analyst, I want to select custom date/time ranges and use preset shortcuts (Last Hour, Today, Last Week) so I can quickly review specific time windows.
-12. As a Data Analyst, I want to download filtered results as CSV so I can perform advanced statistical analysis in external tools.
-13. As a Data Analyst, I want to see events plotted on a timeline so I can identify temporal clustering and event sequences.
-16. As a Data Analyst, I want to see frequency distribution charts (e.g., how many EARTHQUAKEs per region) so I can identify spatial-temporal patterns.
+10. As a Data Analyst, I want to filter history by event type (EARTHQUAKE/EXPLOSION/NUCLEAR) so I can analyze specific seismic phenomena.
+11. As a Data Analyst, I want to narrow results by sensor ID or geographic region so I can study localized activity patterns.
+12. As a Data Analyst, I want to select custom date/time ranges and use preset shortcuts (Last Hour, Today, Last Week) so I can quickly review specific time windows.
+13. As a Data Analyst, I want to download filtered results as CSV/JSON so I can perform advanced statistical analysis in external tools.
+14. As a Data Analyst, I want to see events plotted on a timeline so I can identify temporal clustering and event sequences.
+16. As a Data Analyst, I want to see which events were confirmed by majority vote across replicas so I can assess detection consensus quality.
+17. As a Data Analyst, I want to see the events timeline given a specific region so I can identify spatial-temporal patterns.
 25. As a System Administrator,  I want the health status to be continuously updated via WebSocket so I can monitor fixes in real time.
 
 ### PORTS: 
@@ -168,9 +192,9 @@ The service uses Spring Boot controllers for endpoints, repositories for databas
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | GET | /events | Retrieve filtered event list | 8, 10-13, 16 |
+    | GET | /events | Retrieve filtered event list | 8, 10-14, 16, 17 |
     | GET | /sensors | Get sensor metadata | 1, 5 |
-    | GET | /replicas | Get replica statuses | 3, 18-23 |
+    | GET | /replicas | Get replica statuses | 3, 19-23 |
     | WS | /health/ws | WebSocket for continuous health status updates | 25 |
 
 - DB STRUCTURE: 

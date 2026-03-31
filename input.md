@@ -10,7 +10,8 @@
 
 3. As an Operator, I want to see how many replicas are healthy/degraded/unavailable so I can assess system reliability at a glance.
 
-4. As an Operator, I want to see session uptime, reconnect count, and estimated lost events so I can track system stability over time.
+4. As an Operator, I want to change the theme’s page and choose between Night or
+Light mode.
 
 5. As an Operator, I want to click on a sensor to see its recent events and status so I can investigate specific locations.
 
@@ -20,37 +21,37 @@
 
 8. As an Operator, I want events color-coded by severity (NUCLEAR in red, EXPLOSION in orange, EARTHQUAKE in yellow) so incident criticality is instantly visible.
 
-9. As a Data Analyst, I want to filter history by event type (EARTHQUAKE/EXPLOSION/NUCLEAR) so I can analyze specific seismic phenomena.
+9. As an Operator, i want to pause the Map’s auto-movement when events incomes.
 
-10. As a Data Analyst, I want to narrow results by sensor ID or geographic region so I can study localized activity patterns.
+10. As a Data Analyst, I want to filter history by event type (EARTHQUAKE/EXPLOSION/NUCLEAR) so I can analyze specific seismic phenomena.
 
-11. As a Data Analyst, I want to select custom date/time ranges and use preset shortcuts (Last Hour, Today, Last Week) so I can quickly review specific time windows.
+11. As a Data Analyst, I want to narrow results by sensor ID or geographic region so I can study localized activity patterns.
 
-12. As a Data Analyst, I want to download filtered results as CSV so I can perform advanced statistical analysis in external tools.
+12. As a Data Analyst, I want to select custom date/time ranges and use preset shortcuts (Last Hour, Today, Last Week) so I can quickly review specific time windows.
 
-13. As a Data Analyst, I want to see events plotted on a timeline so I can identify temporal clustering and event sequences.
+13. As a Data Analyst, I want to download filtered results as CSV/JSON so I can perform advanced statistical analysis in external tools.
 
-14. As a Data Analyst, I want to group closely-timed events into "incidents" so I can analyze coordinated or cascading seismic activity.
+14. As a Data Analyst, I want to see events plotted on a timeline so I can identify temporal clustering and event sequences.
 
-15. As a Data Analyst, I want to see which events were confirmed by majority vote across replicas so I can assess detection consensus quality.
+15. As a Data Analyst, I want to group closely-timed events into "incidents" so I can analyze coordinated or cascading seismic activity.
 
-16. As a Data Analyst, I want to see frequency distribution charts (e.g., how many EARTHQUAKEs per region) so I can identify spatial-temporal patterns.
+16. As a Data Analyst, I want to see which events were confirmed by majority vote across replicas so I can assess detection consensus quality.
 
-17. As a Data Analyst, I want to compare event counts and frequency profiles across two sensors side-by-side so I can identify sensor anomalies or regional differences.
+17. As a Data Analyst, I want to see the events timeline given a specific region so I can identify spatial-temporal patterns.
 
-18. As a System Administrator, I want to see which replicas are healthy and which are down so I can quickly identify infrastructure failures.
+18. As a Data Analyst, I want to compare event counts and frequency profiles across two sensors side-by-side so I can identify sensor anomalies or regional differences.
 
-19. As a System Administrator, I want to track total session uptime so I can report SLA compliance.
+19. As a System Administrator, I want to see which replicas are healthy and which are down so I can quickly identify infrastructure failures.
 
-20. As a System Administrator, I want to see how many reconnect events have occurred so I can detect flaky connections.
+20. As a System Administrator, I want to download system metrics (uptime, reconnects, CPU/memory if available) so I can feed them into monitoring dashboards.
 
-21. As a System Administrator, I want to know approximate lost events count so I can assess data integrity.
+21. As a System Administrator, I want to see how many reconnect events have occurred so I can detect flaky connections.
 
 22. As a System Administrator, I want to verify backend connectivity status so I can validate deployment health during startup.
 
 23. As a System Administrator, I want to receive visual alerts when a replica goes down or enters degraded state so I can respond quickly to failures.
 
-24. As a System Administrator, I want to download system metrics (uptime, reconnects, CPU/memory if available) so I can feed them into monitoring dashboards.
+24. As a System Administrator, I want to see the application’s version and many other informations.
 
 25. As a System Administrator,  I want the health status to be continuously updated via WebSocket so I can monitor fixes in real time.
 
