@@ -15,6 +15,22 @@ export const AboutModal = ({
   backendImageTag,
   buildTimestamp,
 }: AboutModalProps) => {
+  const formatBuildDate = (value: string) => {
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) {
+      return 'Unavailable'
+    }
+
+    return new Intl.DateTimeFormat('en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'medium',
+      timeZone: 'UTC',
+    }).format(parsed)
+  }
+
+  const liveWsStatus = liveWsUrl && liveWsUrl.length > 0 ? 'Configured' : 'Not configured'
+  const historyApiStatus = historyApiUrl && historyApiUrl.length > 0 ? 'Configured' : 'Not configured'
+
   if (!open) {
     return null
   }
@@ -25,7 +41,7 @@ export const AboutModal = ({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-400">System Information</p>
-            <h2 className="mt-1 text-lg uppercase tracking-[0.16em] text-zinc-100">About This Dashboard</h2>
+            <h2 className="mt-1 text-lg font-semibold tracking-[0.08em] text-zinc-100">About This Dashboard</h2>
           </div>
           <button
             type="button"
@@ -38,9 +54,13 @@ export const AboutModal = ({
 
         <div className="mt-4 space-y-2 text-[11px] uppercase tracking-[0.1em] text-zinc-300">
           <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Frontend version: {frontendVersion}</p>
-          <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Commit hash: {commitHash}</p>
-          <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Backend image: {backendImageTag}</p>
           <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">Build timestamp: {buildTimestamp}</p>
+          <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">
+            Live websocket: {liveWsUrl && liveWsUrl.length > 0 ? 'configured' : 'not configured'}
+          </p>
+          <p className="rounded-sm border border-zinc-700/80 bg-zinc-900/70 px-2 py-2">
+            History API: {historyApiUrl && historyApiUrl.length > 0 ? 'configured' : 'not configured'}
+          </p>
         </div>
       </div>
     </div>
