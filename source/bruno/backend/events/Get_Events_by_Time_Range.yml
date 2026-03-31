@@ -1,0 +1,23 @@
+info:
+  name: Get Events by Time Range
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: http://localhost:{{backend_port}}/api/history/events?from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z
+  params:
+    query:
+      - name: from
+        value: "2026-01-01T00:00:00Z"
+        enabled: true
+      - name: to
+        value: "2026-12-31T23:59:59Z"
+        enabled: true
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

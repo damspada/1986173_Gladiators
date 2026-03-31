@@ -1,0 +1,20 @@
+info:
+  name: Manual Shutdown
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: http://localhost:{{simulator_port}}/api/admin/shutdown
+  auth: inherit
+
+runtime:
+  variables:
+    - name: simulator_port
+      value: "9090"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

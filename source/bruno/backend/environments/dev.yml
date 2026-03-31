@@ -1,0 +1,6 @@
+name: dev
+variables:
+  - name: backend_port
+    value: "8081"
+  - name: broker_port
+    value: "9091"

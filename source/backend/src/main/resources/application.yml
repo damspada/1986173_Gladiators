@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: aFragileBalanceOfPower-backend
+  neo4j:
+    uri: ${NEO4J_URI:bolt://localhost:7687}
+    authentication:
+      username: ${NEO4J_USERNAME:neo4j}
+      password: ${NEO4J_PASSWORD:password}
+
+server:
+  port: 8090
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+simulator:
+  base-url: ${SIMULATOR_BASE_URL:http://localhost:9090}
+
+broker:
+  sse-url: ${BROKER_SSE_URL:http://localhost:9090/backend/sse}
+

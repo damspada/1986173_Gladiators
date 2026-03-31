@@ -1,0 +1,20 @@
+services:
+
+  frontend:
+    build:
+      context: .
+      args:
+        VITE_LIVE_WS_URL: ws://localhost/api/events/ws
+        VITE_HISTORY_API_URL: http://localhost/api/history/events
+    ports:
+      - "80:80"
+    environment:
+      BACKEND_UPSTREAM: backend:8090
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - gladiators-net
+
+networks:
+  gladiators-net:

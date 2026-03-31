@@ -1,0 +1,15 @@
+info:
+  name: Get Replica Disconnections
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: http://localhost:{{backend_port}}/api/replicas/d0d7fefeedcf/disconnections
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

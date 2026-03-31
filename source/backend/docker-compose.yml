@@ -1,0 +1,27 @@
+services:
+
+  backend:
+    build: .
+    ports:
+      - "8081:8090"
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    environment:
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
+      SIMULATOR_BASE_URL: http://simulator:8080
+      BROKER_SSE_URL: http://broker:9090/backend/sse
+    networks:
+      - gladiators-net
+
+networks:
+  gladiators-net:
+
