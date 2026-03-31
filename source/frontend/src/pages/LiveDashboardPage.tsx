@@ -30,7 +30,6 @@ export const LiveDashboardPage = ({
   const regionIncidents = useMemo(() => groupEventsByIncident(events, 4 * 60 * 1000), [events])
   const healthyReplicas = infrastructure?.replicas.filter((item) => item.status === 'healthy').length ?? 0
   const totalReplicas = infrastructure?.replicas.length ?? 0
-  const downReplicas = infrastructure?.replicas.filter((item) => item.status === 'down') ?? []
   const latestRegionIncident = regionIncidents[0] ?? null
   const infrastructureHealthLabel = totalReplicas > 0 && healthyReplicas === totalReplicas
     ? 'Nominal'
@@ -54,22 +53,6 @@ export const LiveDashboardPage = ({
 
   return (
     <section className="space-y-4">
-      {infrastructureHealthLabel !== 'Nominal' && (
-        <section className="rounded-sm border border-rose-500/70 bg-rose-900/20 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-rose-400 animate-pulse"></div>
-            <p className="text-sm font-medium text-rose-200">Infrastructure Alert</p>
-          </div>
-          <p className="mt-1 text-xs text-rose-300">
-            {infrastructureHealthLabel === 'Degraded'
-              ? `${downReplicas.length} replica(s) are down: ${downReplicas.map((r) => r.id).join(', ')}`
-              : 'All replicas are unavailable.'
-            }
-          </p>
-        </section>
-      )}
-
-
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-4">
           <SensorGridMap sensors={sensors} latestEvents={events} onSelectSensor={onOpenSensor} />

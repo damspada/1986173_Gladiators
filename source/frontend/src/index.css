@@ -468,6 +468,40 @@ body {
   animation: routeLabelFlicker 0.46s steps(2, end) infinite;
 }
 
+@keyframes eventTickerScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.event-news-ticker {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.event-news-ticker__track {
+  display: inline-flex;
+  min-width: max-content;
+  will-change: transform;
+  animation: eventTickerScroll 14s linear infinite;
+}
+
+.event-news-ticker__item {
+  padding-right: 2.5rem;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-news-ticker__track {
+    animation: none;
+  }
+}
+
 @keyframes sensorPulse {
   0% {
     transform: scale(1);

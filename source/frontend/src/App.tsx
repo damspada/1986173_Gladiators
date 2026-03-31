@@ -11,9 +11,8 @@ import { InfrastructurePage } from './pages/InfrastructurePage'
 import { LiveDashboardPage } from './pages/LiveDashboardPage'
 import { SensorDetailsPage } from './pages/SensorDetailsPage'
 import { ZoneDetailsPage } from './pages/ZoneDetailsPage'
-import type { SeismicEvent } from './types/seismic'
+import type { EventClassification, SeismicEvent } from './types/seismic'
 import {
-  alertSeverityLabel,
   evaluateAlertSeverity,
   isSeverityAtLeast,
   normalizeAlertPreferences,
@@ -43,6 +42,7 @@ interface ThemePreferences {
 }
 
 interface AlertNotice {
+  classification: EventClassification
   severity: AlertSeverity
   frequency: number
   triggeredAt: string
@@ -139,6 +139,20 @@ const AppFrame = () => {
   })
   const alertNoticeTimerRef = useRef<number | null>(null)
 
+  const totalReplicas = infrastructure.status?.replicas.length ?? 0
+  const healthyReplicas = infrastructure.status?.replicas.filter((item) => item.status === 'healthy').length ?? 0
+  const downReplicas = infrastructure.status?.replicas.filter((item) => item.status === 'down') ?? []
+  const allReplicasDown = totalReplicas > 0 && healthyReplicas === 0
+
+  const infrastructureAlert = downReplicas.length > 0
+    ? {
+        tone: allReplicasDown ? 'critical' as const : 'warning' as const,
+        message: allReplicasDown
+          ? 'All replicas are down.'
+          : `${downReplicas.length} replica(s) down: ${downReplicas.map((item) => item.id).join(', ')}`,
+      }
+    : null
+
   const openSensorPage = (sensorId: string) => {
     setSelectedEvent(null)
     navigate(`/sensors/${encodeURIComponent(sensorId)}`)
@@ -229,6 +243,7 @@ const AppFrame = () => {
 
     if (shouldShowVisual) {
       setAlertNotice({
+        classification: latestEvent.classification,
         severity: nextSeverity,
         frequency: latestEvent.frequency,
         triggeredAt: latestEvent.timestamp,
@@ -316,18 +331,11 @@ const AppFrame = () => {
           activeAlertSeverity={activeAlertSeverity}
           alertPreferences={alertPreferences}
           onAlertPreferencesChange={(next) => setAlertPreferences(normalizeAlertPreferences(next))}
+          infrastructureAlert={infrastructureAlert}
+          eventAlert={alertPreferences.visualEnabled ? alertNotice : null}
         />
 
         <main className={isRouteTransitioning ? 'route-content route-content--transitioning' : 'route-content'}>
-          {alertPreferences.visualEnabled && alertNotice ? (
-            <section className="mb-3 rounded-sm border border-rose-400/70 bg-rose-900/20 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100">
-              <p className="font-semibold text-rose-200">{alertSeverityLabel[alertNotice.severity]} Frequency Alert</p>
-              <p className="mt-1 text-rose-100/90">
-                Frequency {alertNotice.frequency.toFixed(2)} Hz crossed configured threshold at {new Date(alertNotice.triggeredAt).toUTCString()}.
-              </p>
-            </section>
-          ) : null}
-
           <Routes>
             <Route path="/" element={<Navigate to="/live" replace />} />
             <Route
