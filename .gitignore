@@ -1,2 +1,6 @@
 .github
+<<<<<<< HEAD
 ./frontend-dashboard
+=======
+./frontend-dashboard
+>>>>>>> origin/main
