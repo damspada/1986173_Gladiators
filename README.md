@@ -4,10 +4,10 @@
 
 | Member | LinkedIn |
 |---|---|
+| Antonio Turco | [linkedin.com/in/antonyoturco](https://www.linkedin.com/in/antonyoturco/) |
 | Simone Nolè | [linkedin.com/in/simone-nolè-306940400](https://www.linkedin.com/in/simone-nol%C3%A8-306940400) |
 | Alfredo Segala | [linkedin.com/in/alfredo-segala-24ab89295](https://www.linkedin.com/in/alfredo-segala-24ab89295/) |
 | Damiano Spadaccini | [linkedin.com/in/damiano-spadaccini-2890b323b](https://www.linkedin.com/in/damiano-spadaccini-2890b323b/) |
-| Antonio Turco | [linkedin.com/in/antonyoturco](https://www.linkedin.com/in/antonyoturco/) |
 
 A distributed, fault-tolerant seismic monitoring platform that ingests real-time sensor data, classifies seismic events using FFT-based frequency analysis, and provides a live operational dashboard.
 
